@@ -71,24 +71,39 @@ export default async function BooksPage({ searchParams }: BooksPageProps) {
       ) : (
         <div className="mt-7 flex flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-card/60 px-6 py-16 text-center">
           <div className="flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
-            <SearchX className="size-6" aria-hidden="true" />
+            {hasFilters ? (
+              <SearchX className="size-6" aria-hidden="true" />
+            ) : (
+              <BookOpen className="size-6" aria-hidden="true" />
+            )}
           </div>
           <h2 className="mt-5 font-display text-2xl font-semibold">
-            No books match that search
+            {hasFilters ? "No books match that search" : "The shelves are waiting"}
           </h2>
           <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-            Try a different title, author, or category. The shelves are always
-            growing.
+            {hasFilters
+              ? "Try a different title, author, or category. The shelves are always growing."
+              : "Add the first book to the library and give another reader something wonderful to discover."}
           </p>
-          <Button
-            render={<Link href="/books" />}
-            nativeButton={false}
-            variant="outline"
-            className="mt-6 rounded-full"
-          >
-            <BookOpen className="size-4" />
-            View all books
-          </Button>
+          {hasFilters ? (
+            <Button
+              render={<Link href="/books" />}
+              nativeButton={false}
+              variant="outline"
+              className="mt-6 rounded-full"
+            >
+              <BookOpen className="size-4" />
+              View all books
+            </Button>
+          ) : (
+            <Button
+              render={<Link href="/add-book" />}
+              nativeButton={false}
+              className="mt-6 rounded-full"
+            >
+              Add a book
+            </Button>
+          )}
         </div>
       )}
     </div>

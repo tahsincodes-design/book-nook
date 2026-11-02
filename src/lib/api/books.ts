@@ -1,11 +1,7 @@
 import { cacheLife, cacheTag } from "next/cache";
-import type { Book, BookCategory } from "@/lib/types/book";
 
-const API_URL = (
-  process.env.API_URL ??
-  process.env.NEXT_PUBLIC_API_URL ??
-  "http://localhost:5000"
-).replace(/\/$/, "");
+import { API_URL } from "@/lib/api/config";
+import type { Book, BookCategory } from "@/lib/types/book";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;

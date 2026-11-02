@@ -9,9 +9,9 @@ export function BorrowButton({ available }: { available: boolean }) {
     <Button
       disabled={!available}
       onClick={() =>
-        toast.info("Borrowing will be connected to the API next.", {
+        toast.info("Borrowing is coming soon.", {
           description:
-            "The catalogue is live from http://localhost:5000. Borrowing is the next step.",
+            "The catalogue is connected to the BookNook API. Borrowing is the next step.",
         })
       }
       className="h-10 rounded-full px-5"

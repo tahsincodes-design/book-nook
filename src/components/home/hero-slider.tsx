@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowUpRight, BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "cn";
 import { Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import type { Swiper as SwiperClass } from "swiper";
@@ -149,7 +150,11 @@ export function HeroSlider({ books }: { books: Book[] }) {
                 </Button>
               </div>
 
-              <HeroCovers books={books} offset={index} />
+              <HeroCovers
+                books={books}
+                offset={index}
+                accent={slide.theme.accent}
+              />
             </div>
           </SwiperSlide>
         ))}
@@ -195,9 +200,17 @@ export function HeroSlider({ books }: { books: Book[] }) {
   );
 }
 
-function HeroCovers({ books, offset }: { books: Book[]; offset: number }) {
+function HeroCovers({
+  books,
+  offset,
+  accent,
+}: {
+  books: Book[];
+  offset: number;
+  accent: string;
+}) {
   if (books.length === 0) {
-    return null;
+    return <HeroCoversPlaceholder accent={accent} />;
   }
 
   const covers = Array.from(
@@ -238,6 +251,63 @@ function HeroCovers({ books, offset }: { books: Book[]; offset: number }) {
           />
         </div>
       ))}
+    </div>
+  );
+}
+
+/**
+ * Shown until the catalogue has books. It keeps the hero balanced with a
+ * branded stack of blank covers instead of an empty half-screen.
+ */
+function HeroCoversPlaceholder({ accent }: { accent: string }) {
+  const covers = [
+    "left-[1%] top-[15%] w-[38%] -rotate-6 bg-white/[0.12]",
+    "right-[1%] top-[17%] w-[38%] rotate-6 bg-white/[0.09]",
+    "left-1/2 top-[4%] z-10 w-[36%] -translate-x-1/2 rotate-1 bg-brand-cream",
+  ];
+
+  return (
+    <div
+      aria-hidden="true"
+      className="relative mx-auto hidden h-[230px] w-full max-w-[390px] sm:block sm:h-[270px] lg:h-[330px] lg:max-w-[430px]"
+    >
+      <div className="pointer-events-none absolute inset-x-12 bottom-2 h-10 rounded-[50%] bg-black/25 blur-2xl" />
+
+      {covers.map((cover, index) => {
+        const isCream = index === 2;
+
+        return (
+          <div
+            key={cover}
+            className={cn(
+              "absolute aspect-[2/3] overflow-hidden rounded-xl shadow-[0_20px_35px_-16px_rgba(0,0,0,0.65)] ring-1 transition-transform duration-500",
+              cover,
+              isCream ? "ring-black/10" : "ring-white/15",
+            )}
+          >
+            <div
+              className="absolute inset-x-[12%] top-[9%] h-px opacity-70"
+              style={{ backgroundColor: isCream ? accent : "rgba(255,255,255,0.4)" }}
+            />
+            <div
+              className="absolute inset-x-[12%] bottom-[9%] h-px opacity-40"
+              style={{ backgroundColor: isCream ? accent : "rgba(255,255,255,0.3)" }}
+            />
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+              <BookOpen
+                className="size-6 lg:size-7"
+                style={{ color: isCream ? accent : "rgba(255,255,255,0.55)" }}
+              />
+              <span
+                className="text-[0.44rem] font-semibold tracking-[0.26em] uppercase lg:text-[0.5rem]"
+                style={{ color: isCream ? accent : "rgba(255,255,255,0.4)" }}
+              >
+                BookNook
+              </span>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

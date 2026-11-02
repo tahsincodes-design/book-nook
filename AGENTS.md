@@ -44,6 +44,8 @@ Before finishing, run `npm run lint` and `npx tsc --noEmit`.
 - Books come from `getBooks()` in `src/lib/api/books.ts`, which calls `GET /books` on the Express backend at `NEXT_PUBLIC_API_URL` (default `http://localhost:5000`). If the request fails, it logs a warning and renders empty shelves instead of crashing. `getBooks` is cached with `cacheLife("minutes")` and `cacheTag("books")`.
 - Theme is `next-themes` with `attribute="class"`; brand tokens and light/dark palettes live in `src/app/globals.css`.
 - `src/components/layout/site-navbar.tsx` treats the demo reader as signed in until BetterAuth lands.
+- `/add-book` is private. `src/app/(main)/add-book/page.tsx` reads `getCurrentUser()` from `src/lib/auth.ts` (demo reader until BetterAuth), and `src/components/books/add-book-form.tsx` submits through the `createBook` server action in `src/lib/actions/books.ts`. That action posts to `POST /add-books`, stamps `createdAt`, and calls `updateTag("books")` so the new book appears immediately.
+- Covers are uploaded to imgbb by `src/app/api/upload/route.ts` using `IMGBB_API_KEY`; readers can also paste an image URL. `.env.example` documents both variables.
 - `instant = false` is set on the `(main)` layout and on `/books` and `/books/[id]` because the navbar reads `usePathname()` and those pages read `searchParams` / `params`. Remove it once those reads sit behind `<Suspense>`.
 
-`.env*` is gitignored. The frontend expects `GET /books` from the Express backend; until that route exists, shelves render their empty state.
+`.env*` is gitignored (`.env.example` is committed). The Express backend implements `GET /books` and `POST /add-books` and stores `createdAt` as a Mongo `Date`.
