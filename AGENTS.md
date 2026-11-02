@@ -37,4 +37,13 @@ Before finishing, run `npm run lint` and `npx tsc --noEmit`.
 - `src/components/ui/` — generated shadcn components; edit only when a project-specific change is intended.
 - `src/lib/` — shared helpers.
 
-`.env*` is gitignored. No env files, backend, or data layer exist yet.
+## Home page & app shell
+
+- `src/app/(main)/layout.tsx` renders `SiteNavbar` + `SiteFooter` for every page. The navbar is the required top bar (logo, Home, All Books, Add Book, My Books, My Borrows); there is no sidebar.
+- `src/app/(main)/page.tsx` composes the home sections from `src/components/home/`.
+- Books come from `getBooks()` in `src/lib/api/books.ts`, which calls `GET /books` on the Express backend at `NEXT_PUBLIC_API_URL` (default `http://localhost:5000`). If the request fails, it logs a warning and renders empty shelves instead of crashing. `getBooks` is cached with `cacheLife("minutes")` and `cacheTag("books")`.
+- Theme is `next-themes` with `attribute="class"`; brand tokens and light/dark palettes live in `src/app/globals.css`.
+- `src/components/layout/site-navbar.tsx` treats the demo reader as signed in until BetterAuth lands.
+- `instant = false` is set on the `(main)` layout and on `/books` and `/books/[id]` because the navbar reads `usePathname()` and those pages read `searchParams` / `params`. Remove it once those reads sit behind `<Suspense>`.
+
+`.env*` is gitignored. The frontend expects `GET /books` from the Express backend; until that route exists, shelves render their empty state.
