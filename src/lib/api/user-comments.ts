@@ -4,7 +4,9 @@ export type UserComment = {
   id: string;
   content: string;
   author: string;
+  email: string | null;
   createdAt: string | null;
+  rating: number | null;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -18,6 +20,21 @@ function firstString(...values: unknown[]): string | null {
   )?.trim() ?? null;
 }
 
+function parseRating(value: unknown): number | null {
+  const candidate =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number(value)
+        : isRecord(value)
+          ? Number(value.value ?? value.$numberInt ?? value.$numberDouble)
+          : Number.NaN;
+
+  return Number.isInteger(candidate) && candidate >= 1 && candidate <= 5
+    ? candidate
+    : null;
+}
+
 function normalizeComment(value: unknown, index: number): UserComment | null {
   if (!isRecord(value)) {
     return null;
@@ -29,17 +46,41 @@ function normalizeComment(value: unknown, index: number): UserComment | null {
     return null;
   }
 
-  const user = isRecord(value.user) ? value.user : null;
+  const user = isRecord(value.user)
+    ? value.user
+    : isRecord(value.reader)
+      ? value.reader
+      : null;
   const id = firstString(value._id, value.id) ?? `${content}-${index}`;
   const createdAt = firstString(value.createdAt, value.date);
+  const rating = parseRating(
+    value.rating ??
+      value.ratings ??
+      value.stars ??
+      value.star ??
+      value.starRating ??
+      value.star_rating ??
+      value.ratingValue ??
+      value.rating_value ??
+      value.rate ??
+      value.ratting ??
+      value.rateing,
+  );
 
   return {
     id,
     content,
     author:
-      firstString(value.name, value.userName, value.authorName, user?.name) ??
-      "BookNook reader",
+      firstString(
+        value.name,
+        value.userName,
+        value.authorName,
+        value.user_name,
+        user?.name,
+      ) ?? "Reader",
+    email: firstString(value.email, value.userEmail, value.authorEmail, user?.email),
     createdAt,
+    rating,
   };
 }
 
@@ -71,8 +112,16 @@ async function responseMessage(response: Response, fallback: string) {
   return fallback;
 }
 
-export async function getUserComments(userId: string): Promise<UserComment[]> {
+export async function getUserComments(
+  userId: string,
+  email?: string,
+): Promise<UserComment[]> {
   const query = new URLSearchParams({ userId });
+
+  if (email) {
+    query.set("email", email);
+  }
+
   const response = await fetch(`${API_URL}/usersComments?${query}`, {
     headers: { Accept: "application/json" },
     cache: "no-store",
@@ -92,7 +141,10 @@ export async function getUserComments(userId: string): Promise<UserComment[]> {
 
 export async function postUserComment(
   userId: string,
+  name: string,
+  email: string,
   content: string,
+  rating: number,
 ): Promise<void> {
   const response = await fetch(`${API_URL}/usersComments`, {
     method: "POST",
@@ -100,7 +152,14 @@ export async function postUserComment(
       Accept: "application/json",
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ userId, comment: content }),
+    body: JSON.stringify({
+      userId,
+      name,
+      email,
+      comment: content,
+      rating,
+      stars: rating,
+    }),
     cache: "no-store",
   });
 

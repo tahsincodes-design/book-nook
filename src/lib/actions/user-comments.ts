@@ -9,6 +9,7 @@ export type AddUserCommentResult =
 
 export async function addUserComment(
   content: string,
+  rating: number,
 ): Promise<AddUserCommentResult> {
   const user = await getCurrentUser();
 
@@ -29,8 +30,12 @@ export async function addUserComment(
     };
   }
 
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    return { ok: false, message: "Choose a rating from 1 to 5 stars." };
+  }
+
   try {
-    await postUserComment(user.id, comment);
+    await postUserComment(user.id, user.name, user.email, comment, rating);
     return { ok: true };
   } catch (error) {
     return {
@@ -49,7 +54,10 @@ export async function refreshUserComments() {
   }
 
   try {
-    return { ok: true as const, comments: await getUserComments(user.id) };
+    return {
+      ok: true as const,
+      comments: await getUserComments(user.id, user.email),
+    };
   } catch (error) {
     return {
       ok: false as const,

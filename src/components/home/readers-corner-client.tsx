@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
-import { MessageSquare, Send } from "lucide-react";
+import { MessageSquare, Send, Star } from "lucide-react";
 
 import {
   addUserComment,
@@ -30,6 +30,33 @@ function initialsFromName(name: string) {
   );
 }
 
+function CommentRating({ rating }: { rating: number | null }) {
+  if (rating === null) {
+    return (
+      <span className="text-xs font-medium text-muted-foreground">
+        No rating
+      </span>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <div
+        className="flex items-center gap-1 text-brand-terracotta dark:text-[#e0a48a]"
+        role="img"
+        aria-label={`${rating} out of 5 stars`}
+      >
+        {Array.from({ length: rating }, (_, index) => (
+          <Star key={index} className="size-4 fill-current" aria-hidden="true" />
+        ))}
+      </div>
+      <span className="text-xs font-semibold text-foreground">
+        {rating} out of 5
+      </span>
+    </div>
+  );
+}
+
 export function ReadersCornerClient({
   comments: initialComments,
   loadError,
@@ -41,6 +68,7 @@ export function ReadersCornerClient({
 }) {
   const [comments, setComments] = useState(initialComments);
   const [content, setContent] = useState("");
+  const [rating, setRating] = useState(0);
   const [error, setError] = useState(loadError);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -50,7 +78,7 @@ export function ReadersCornerClient({
     setIsSubmitting(true);
 
     try {
-      const result = await addUserComment(content);
+      const result = await addUserComment(content, rating);
 
       if (!result.ok) {
         setError(result.message);
@@ -58,6 +86,7 @@ export function ReadersCornerClient({
       }
 
       setContent("");
+      setRating(0);
       const refreshed = await refreshUserComments();
 
       if (!refreshed.ok) {
@@ -112,29 +141,38 @@ export function ReadersCornerClient({
       )}
 
       {comments.length > 0 ? (
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
+        <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {comments.map((comment) => (
             <Card
               key={comment.id}
-              className="flex h-full flex-col justify-between rounded-2xl border-0 bg-card p-5 ring-1 ring-foreground/10"
+              className="flex h-full flex-col rounded-3xl border-0 bg-card p-6 shadow-[0_12px_35px_-22px_rgba(29,42,35,0.4)] ring-1 ring-foreground/10 transition-shadow hover:shadow-[0_18px_42px_-22px_rgba(29,42,35,0.5)]"
             >
-              <blockquote className="font-display text-[1.08rem] leading-snug text-foreground">
+              <div className="flex items-center justify-between gap-3">
+                <CommentRating rating={comment.rating} />
+              </div>
+
+              <blockquote className="mt-5 flex-1 font-display text-lg leading-relaxed text-foreground">
                 &ldquo;{comment.content}&rdquo;
               </blockquote>
 
-              <div className="mt-6 flex items-center gap-3 border-t border-border/60 pt-4">
-                <Avatar size="sm">
-                  <AvatarFallback className="bg-[#e4d8c8] text-[0.62rem] font-semibold text-[#5a4939] dark:bg-[#3a2d25] dark:text-[#e8d6c4]">
+              <div className="mt-6 flex items-center gap-3 border-t border-border/70 pt-5">
+                <Avatar className="size-10 ring-2 ring-brand-sage/20">
+                  <AvatarFallback className="bg-[#e4d8c8] text-xs font-semibold text-[#5a4939] dark:bg-[#3a2d25] dark:text-[#e8d6c4]">
                     {initialsFromName(comment.author)}
                   </AvatarFallback>
                 </Avatar>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-foreground">
                     {comment.author}
                   </p>
+                  {comment.email && (
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {comment.email}
+                    </p>
+                  )}
                   {comment.createdAt && (
                     <time
-                      className="text-[0.7rem] text-muted-foreground"
+                      className="mt-1 block text-[0.7rem] text-muted-foreground"
                       dateTime={comment.createdAt}
                     >
                       {new Date(comment.createdAt).toLocaleDateString()}
@@ -169,6 +207,38 @@ export function ReadersCornerClient({
             >
               Leave a comment on your reader profile
             </label>
+            <fieldset className="grid gap-2">
+              <legend className="text-sm text-muted-foreground">
+                Your rating
+              </legend>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: 5 }, (_, index) => {
+                  const value = index + 1;
+                  const isSelected = value <= rating;
+
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      aria-label={`${value} ${value === 1 ? "star" : "stars"}`}
+                      aria-pressed={rating === value}
+                      onClick={() => setRating(value)}
+                      className="rounded-md p-1 text-brand-terracotta transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none dark:text-[#e0a48a]"
+                    >
+                      <Star
+                        className={`size-5 ${
+                          isSelected ? "fill-current" : ""
+                        }`}
+                        aria-hidden="true"
+                      />
+                    </button>
+                  );
+                })}
+                <span className="ml-2 text-xs text-muted-foreground">
+                  {rating ? `${rating} out of 5` : "Select 1–5 stars"}
+                </span>
+              </div>
+            </fieldset>
             <Textarea
               id="reader-comment"
               value={content}
@@ -188,7 +258,7 @@ export function ReadersCornerClient({
               <Button
                 type="submit"
                 className="rounded-full"
-                disabled={isSubmitting || !content.trim()}
+                disabled={isSubmitting || !content.trim() || rating === 0}
               >
                 <Send className="size-4" aria-hidden="true" />
                 {isSubmitting ? "Posting..." : "Post comment"}
