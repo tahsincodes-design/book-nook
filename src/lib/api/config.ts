@@ -1,10 +1,16 @@
 import "server-only";
 
 /**
- * Base URL for the Express API. Set `API_URL` in the frontend `.env`;
- * Next.js loads it before evaluating the app and config.
+ * Base URL for the Express API. Local development defaults to localhost;
+ * production builds require the deployed API URL in `API_URL`.
  */
-export const API_URL = (
-  process.env.API_URL ??
-  "http://localhost:5000"
-).replace(/\/$/, "");
+const configuredApiUrl = process.env.API_URL?.trim();
+
+if (process.env.NODE_ENV === "production" && !configuredApiUrl) {
+  throw new Error("API_URL must be set to the deployed Express API URL.");
+}
+
+export const API_URL = (configuredApiUrl ?? "http://localhost:5000").replace(
+  /\/$/,
+  "",
+);
