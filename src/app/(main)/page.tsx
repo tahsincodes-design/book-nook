@@ -76,7 +76,16 @@ export default async function HomePage() {
 
       <FreshShelves books={latestBooks} />
       <CuratedShelves />
-      <ReadersCorner />
+      <Suspense
+        fallback={
+          <div
+            className="mt-12 h-56 animate-pulse rounded-3xl bg-muted/50"
+            aria-hidden="true"
+          />
+        }
+      >
+        <ReadersCorner />
+      </Suspense>
       <ReadingJourney />
     </div>
   );
