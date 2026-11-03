@@ -118,7 +118,7 @@ export function ReadersCornerClient({
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
             {user
-              ? `Reader comments for ${user.name}.`
+              ? "Notes and recommendations shared by BookNook readers."
               : "Reader comments from the BookNook community."}
           </p>
         </div>
@@ -145,7 +145,7 @@ export function ReadersCornerClient({
           {comments.map((comment) => (
             <Card
               key={comment.id}
-              className="flex h-full flex-col rounded-3xl border-0 bg-card p-6 shadow-[0_12px_35px_-22px_rgba(29,42,35,0.4)] ring-1 ring-foreground/10 transition-shadow hover:shadow-[0_18px_42px_-22px_rgba(29,42,35,0.5)]"
+              className="animate-rise-in flex h-full flex-col rounded-3xl border-0 bg-card p-6 shadow-[0_12px_35px_-22px_rgba(29,42,35,0.4)] ring-1 ring-foreground/10 transition-shadow hover:shadow-[0_18px_42px_-22px_rgba(29,42,35,0.5)]"
             >
               <div className="flex items-center justify-between gap-3">
                 <CommentRating rating={comment.rating} />
@@ -165,11 +165,6 @@ export function ReadersCornerClient({
                   <p className="truncate text-sm font-semibold text-foreground">
                     {comment.author}
                   </p>
-                  {comment.email && (
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {comment.email}
-                    </p>
-                  )}
                   {comment.createdAt && (
                     <time
                       className="mt-1 block text-[0.7rem] text-muted-foreground"

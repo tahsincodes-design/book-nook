@@ -19,7 +19,7 @@ export function BookCard({
   const href = `/books/${book._id}`;
 
   return (
-    <Card className="group/card h-full gap-0 overflow-hidden rounded-2xl border-0 bg-card p-0 shadow-[0_1px_0_rgba(29,42,35,0.03)] ring-1 ring-foreground/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_45px_-28px_rgba(29,42,35,0.45)]">
+    <Card className="animate-rise-in group/card h-full gap-0 overflow-hidden rounded-2xl border-0 bg-card p-0 shadow-[0_1px_0_rgba(29,42,35,0.03)] ring-1 ring-foreground/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_45px_-28px_rgba(29,42,35,0.45)]">
       <div className="relative m-3 mb-0 aspect-[2/3] overflow-hidden rounded-xl bg-muted">
         <Link
           href={href}

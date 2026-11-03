@@ -56,7 +56,7 @@ export async function refreshUserComments() {
   try {
     return {
       ok: true as const,
-      comments: await getUserComments(user.id),
+      comments: await getUserComments(),
     };
   } catch (error) {
     return {

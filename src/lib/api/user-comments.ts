@@ -5,7 +5,6 @@ export type UserComment = {
   id: string;
   content: string;
   author: string;
-  email: string | null;
   createdAt: string | null;
   rating: number | null;
 };
@@ -36,6 +35,24 @@ function parseRating(value: unknown): number | null {
     : null;
 }
 
+function parseDate(value: unknown): string | null {
+  if (typeof value === "string" && value.trim()) {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value.trim() : date.toISOString();
+  }
+
+  if (typeof value === "number") {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  }
+
+  if (isRecord(value) && "$date" in value) {
+    return parseDate(value.$date);
+  }
+
+  return null;
+}
+
 function normalizeComment(value: unknown, index: number): UserComment | null {
   if (!isRecord(value)) {
     return null;
@@ -52,8 +69,11 @@ function normalizeComment(value: unknown, index: number): UserComment | null {
     : isRecord(value.reader)
       ? value.reader
       : null;
-  const id = firstString(value._id, value.id) ?? `${content}-${index}`;
-  const createdAt = firstString(value.createdAt, value.date);
+  const id =
+    firstString(value._id, value.id, value.commentId) ?? `${content}-${index}`;
+  const createdAt = parseDate(
+    value.createdAt ?? value.created_at ?? value.date ?? value.timestamp,
+  );
   const rating = parseRating(
     value.rating ??
       value.ratings ??
@@ -75,11 +95,12 @@ function normalizeComment(value: unknown, index: number): UserComment | null {
       firstString(
         value.name,
         value.userName,
+        value.username,
         value.authorName,
         value.user_name,
+        value.displayName,
         user?.name,
       ) ?? "Reader",
-    email: firstString(value.email, value.userEmail, value.authorEmail, user?.email),
     createdAt,
     rating,
   };
@@ -92,7 +113,11 @@ function commentsFromPayload(payload: unknown): UserComment[] {
       ? payload.comments
       : isRecord(payload) && Array.isArray(payload.data)
         ? payload.data
-        : null;
+        : isRecord(payload) &&
+            isRecord(payload.data) &&
+            Array.isArray(payload.data.comments)
+          ? payload.data.comments
+          : null;
 
   if (!records) {
     throw new Error("The comments API returned an unexpected response.");
@@ -113,11 +138,10 @@ async function responseMessage(response: Response, fallback: string) {
   return fallback;
 }
 
-export async function getUserComments(userId: string): Promise<UserComment[]> {
+export async function getUserComments(): Promise<UserComment[]> {
   const token = await getApiAccessToken();
-  const query = new URLSearchParams({ userId });
 
-  const response = await fetch(`${API_URL}/usersComments?${query}`, {
+  const response = await fetch(`${API_URL}/usersComments`, {
     headers: {
       Accept: "application/json",
       Authorization: `Bearer ${token}`,

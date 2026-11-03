@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Compass } from "lucide-react";
+import { ChevronRight, Compass } from "lucide-react";
 
 import { MyBorrowsView } from "@/components/borrows/my-borrows-view";
 import { PageHeader } from "@/components/layout/page-header";
@@ -27,6 +27,19 @@ export default async function MyBorrowsPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pt-8 pb-10 sm:px-6 lg:px-8">
+      <nav
+        aria-label="Breadcrumb"
+        className="mb-5 flex items-center gap-2 text-xs text-muted-foreground"
+      >
+        <Link href="/" className="transition-colors hover:text-foreground">
+          Home
+        </Link>
+        <ChevronRight className="size-3.5" aria-hidden="true" />
+        <span className="font-medium text-foreground" aria-current="page">
+          My borrows
+        </span>
+      </nav>
+
       <PageHeader
         eyebrow="My reading"
         title="Borrowed books"

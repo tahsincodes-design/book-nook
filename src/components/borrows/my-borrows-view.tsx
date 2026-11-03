@@ -111,7 +111,7 @@ function BorrowCard({ item }: { item: BorrowCardItem }) {
   const { borrow, book, status } = item;
 
   return (
-    <Card className="group/card relative gap-0 overflow-hidden rounded-3xl border-0 bg-card p-0 ring-1 ring-foreground/10 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_50px_-32px_rgba(29,42,35,0.45)]">
+    <Card className="animate-rise-in group/card relative gap-0 overflow-hidden rounded-3xl border-0 bg-card p-0 ring-1 ring-foreground/10 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_50px_-32px_rgba(29,42,35,0.45)]">
       <span
         aria-hidden="true"
         className={cn("block h-1 w-full", accentStyles[status])}
