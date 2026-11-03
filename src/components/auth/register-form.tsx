@@ -21,7 +21,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { authClient, googleAuthEnabled } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client";
 
 type FormErrors = Partial<
   Record<"name" | "email" | "image" | "password" | "form", string>
@@ -42,7 +42,13 @@ const passwordRules = [
   },
 ];
 
-export function RegisterForm({ redirectTo }: { redirectTo: string }) {
+export function RegisterForm({
+  redirectTo,
+  googleAuthConfigured,
+}: {
+  redirectTo: string;
+  googleAuthConfigured: boolean;
+}) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -155,10 +161,10 @@ export function RegisterForm({ redirectTo }: { redirectTo: string }) {
   }
 
   async function handleGoogleRegister() {
-    if (!googleAuthEnabled) {
+    if (!googleAuthConfigured) {
       toast.error("Google sign-in is not configured", {
         description:
-          "Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, then set NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true.",
+          "Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to the Vercel Production environment, then redeploy.",
       });
       return;
     }

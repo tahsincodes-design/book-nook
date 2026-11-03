@@ -161,6 +161,26 @@ export async function getUserComments(): Promise<UserComment[]> {
   return commentsFromPayload(await response.json());
 }
 
+export async function getPublicUserComments(): Promise<UserComment[]> {
+  const response = await fetch(`${API_URL}/usersComments`, {
+    headers: {
+      Accept: "application/json",
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      await responseMessage(
+        response,
+        `The comments API responded with status ${response.status}.`,
+      ),
+    );
+  }
+
+  return commentsFromPayload(await response.json());
+}
+
 export async function postUserComment(
   content: string,
   rating: number,

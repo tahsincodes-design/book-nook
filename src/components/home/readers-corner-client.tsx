@@ -179,7 +179,6 @@ export function ReadersCornerClient({
           ))}
         </div>
       ) : (
-        user &&
         !error && (
           <div className="mt-6 rounded-2xl border border-dashed border-border bg-card/60 px-5 py-8 text-center">
             <MessageSquare
@@ -187,7 +186,7 @@ export function ReadersCornerClient({
               aria-hidden="true"
             />
             <p className="mt-3 text-sm text-muted-foreground">
-              No comments yet. Start the conversation.
+              No community comments yet. Start the conversation.
             </p>
           </div>
         )
@@ -264,7 +263,7 @@ export function ReadersCornerClient({
       ) : (
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-muted/50 px-5 py-4">
           <p className="text-sm text-muted-foreground">
-            Sign in to view and add comments.
+            Sign in to add a comment.
           </p>
           <Button
             render={<Link href="/login?redirect=%2F" />}

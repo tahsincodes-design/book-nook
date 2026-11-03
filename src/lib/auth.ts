@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth-server";
 
+export { googleAuthConfigured } from "@/lib/auth-server";
+
 export type SessionUser = {
   id: string;
   name: string;

@@ -39,8 +39,11 @@ if (process.env.NODE_ENV !== "production") {
 
 const db = mongoClient.db(databaseName);
 
-const googleClientId = process.env.GOOGLE_CLIENT_ID;
-const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim();
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+export const googleAuthConfigured = Boolean(
+  googleClientId && googleClientSecret,
+);
 
 // The books and borrows created before BetterAuth was wired up were stamped
 // with the demo reader. The first real account claims them so the existing

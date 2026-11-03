@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { RegisterForm } from "@/components/auth/register-form";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, googleAuthConfigured } from "@/lib/auth";
 import { safeRedirectPath } from "@/lib/redirect";
 
 export const instant = false;
@@ -33,5 +33,10 @@ export default async function RegisterPage({
     redirect(redirectTo);
   }
 
-  return <RegisterForm redirectTo={redirectTo} />;
+  return (
+    <RegisterForm
+      redirectTo={redirectTo}
+      googleAuthConfigured={googleAuthConfigured}
+    />
+  );
 }

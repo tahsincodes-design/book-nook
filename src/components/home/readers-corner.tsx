@@ -1,25 +1,15 @@
-import { getUserComments } from "@/lib/api/user-comments";
+import { getPublicUserComments } from "@/lib/api/user-comments";
 import { getCurrentUser } from "@/lib/auth";
 import { ReadersCornerClient } from "@/components/home/readers-corner-client";
 
 export async function ReadersCorner() {
   const user = await getCurrentUser();
 
-  if (!user) {
-    return (
-      <ReadersCornerClient
-        comments={[]}
-        loadError={null}
-        user={null}
-      />
-    );
-  }
-
-  let comments: Awaited<ReturnType<typeof getUserComments>> = [];
+  let comments: Awaited<ReturnType<typeof getPublicUserComments>> = [];
   let loadError: string | null = null;
 
   try {
-    comments = await getUserComments();
+    comments = await getPublicUserComments();
   } catch (error) {
     loadError =
       error instanceof Error ? error.message : "Could not load comments.";
@@ -29,7 +19,7 @@ export async function ReadersCorner() {
     <ReadersCornerClient
       comments={comments}
       loadError={loadError}
-      user={{ name: user.name }}
+      user={user ? { name: user.name } : null}
     />
   );
 }

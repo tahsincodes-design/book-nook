@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { LoginForm } from "@/components/auth/login-form";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, googleAuthConfigured } from "@/lib/auth";
 import { safeRedirectPath } from "@/lib/redirect";
 
 export const instant = false;
@@ -38,6 +38,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       redirectTo={redirectTo}
       initialEmail={firstValue(params.email) ?? ""}
       registered={firstValue(params.registered) === "1"}
+      googleAuthConfigured={googleAuthConfigured}
     />
   );
 }
