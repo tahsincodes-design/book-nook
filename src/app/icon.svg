@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <title>BookNook</title>
+  <desc>BookNook open book emblem with a terracotta bookmark.</desc>
+  <g transform="translate(12 12)">
+    <rect x="0" y="0" width="96" height="96" rx="25" fill="#244D3E"/>
+    <path d="M18 29.5c13-5.4 24.9-3.9 30 2.6v40.8c-7.2-6.7-18.8-8.5-30-3.2V29.5Z" fill="#F7F6F1"/>
+    <path d="M78 29.5c-13-5.4-24.9-3.9-30 2.6v40.8c7.2-6.7 18.8-8.5 30-3.2V29.5Z" fill="#E8EEE8"/>
+    <path d="M48 32v42.5" fill="none" stroke="#244D3E" stroke-width="3" stroke-linecap="round"/>
+    <path d="M66 14h13v25l-6.5-5.2L66 39V14Z" fill="#BD7357"/>
+    <path d="M25 42c7-2.1 13.1-1.4 17 1.2M25 51c7-2.1 13.1-1.4 17 1.2M71 42c-7-2.1-13.1-1.4-17 1.2M71 51c-7-2.1-13.1-1.4-17 1.2" fill="none" stroke="#A6B7A9" stroke-width="2" stroke-linecap="round"/>
+  </g>
+</svg>
