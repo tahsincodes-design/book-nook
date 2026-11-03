@@ -29,7 +29,7 @@ import {
   sortByNewest,
 } from "@/lib/api/books";
 import { getMyBorrows } from "@/lib/api/borrows";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 import { isBookOwner } from "@/lib/owned-books";
 import type { Book } from "@/lib/types/book";
@@ -46,6 +46,7 @@ export async function generateMetadata({
   params,
 }: BookDetailsPageProps): Promise<Metadata> {
   const { id } = await params;
+  await requireUser(`/books/${id}`);
   const book = await getBook(id);
 
   return {
@@ -110,11 +111,11 @@ export default async function BookDetailsPage({
   params,
 }: BookDetailsPageProps) {
   const { id } = await params;
-  const user = await getCurrentUser();
+  const user = await requireUser(`/books/${id}`);
   const [book, allBooks, myBorrows] = await Promise.all([
     getBook(id),
     getBooks(),
-    user ? getMyBorrows(user.email) : Promise.resolve([]),
+    getMyBorrows(user.email),
   ]);
 
   if (!book) {

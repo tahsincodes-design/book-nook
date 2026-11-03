@@ -43,7 +43,7 @@ export function LoginForm({
   function handleForgotPassword() {
     toast.info("Password reset is not available yet", {
       description:
-        "This demo uses BetterAuth email and password sign-in. Ask the library admin to reset your password.",
+        "Contact the library admin to reset your password.",
     });
   }
 
@@ -90,6 +90,13 @@ export function LoginForm({
       });
       router.push(redirectTo);
       router.refresh();
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Could not sign in. Please try again.";
+      setErrors({ form: message });
+      toast.error("Could not sign in", { description: message });
     } finally {
       setIsSubmitting(false);
     }
@@ -118,9 +125,10 @@ export function LoginForm({
         });
         setIsGoogleLoading(false);
       }
-    } catch {
+    } catch (error) {
       toast.error("Could not continue with Google", {
-        description: "Please try again.",
+        description:
+          error instanceof Error ? error.message : "Please try again.",
       });
       setIsGoogleLoading(false);
     }

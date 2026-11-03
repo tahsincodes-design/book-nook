@@ -1,6 +1,4 @@
 import { Suspense } from "react";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth-server";
 import { CuratedShelves } from "@/components/home/curated-shelves";
 import { FreshShelves } from "@/components/home/fresh-shelves";
 import { HeroSlider } from "@/components/home/hero-slider";
@@ -11,44 +9,35 @@ import { TodayLabel } from "@/components/home/today-label";
 import { WelcomeMessage } from "@/components/home/welcome-message";
 import { getBooks, getLatestBooks } from "@/lib/api/books";
 import { getMyBorrows } from "@/lib/api/borrows";
+import { getCurrentUser } from "@/lib/auth";
 
-export default async function HomePage() {
-  let userEmail: string | undefined = undefined;
+async function PersonalizedStats({
+  books,
+}: {
+  books: Awaited<ReturnType<typeof getBooks>>;
+}) {
+  const user = await getCurrentUser();
+  const myBorrows = user ? await getMyBorrows(user.email) : [];
 
-  // 1. Safely attempt to retrieve the server session
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-    userEmail = session?.user?.email;
-  } catch (error) {
-    console.warn("[homepage] Could not fetch session:", error);
-  }
-
-  // 2. Fetch books (always public)
-  const books = await getBooks();
-
-  // 3. Conditionally fetch user borrows if logged in, safely catching errors
-  let myBorrows: Awaited<ReturnType<typeof getMyBorrows>> = [];
-  if (userEmail) {
-    try {
-      myBorrows = await getMyBorrows(userEmail);
-    } catch (error) {
-      console.warn("[homepage] Could not fetch user borrows:", error);
-    }
-  }
-
-  const latestBooks = getLatestBooks(books, 6);
-  const featuredBooks = latestBooks.slice(0, 3);
-
-  // 4. Compute stats safely with optional chaining
   const stats = {
     booksInLibrary: books.length,
     currentlyBorrowed: myBorrows.length,
-    booksContributed: userEmail
-      ? books.filter((book) => book.addedBy?.email === userEmail).length
+    booksContributed: user
+      ? books.filter(
+          (book) =>
+            book.addedBy?.email.trim().toLowerCase() ===
+            user.email.trim().toLowerCase(),
+        ).length
       : 0,
   };
+
+  return <StatsRow stats={stats} />;
+}
+
+export default async function HomePage() {
+  const books = await getBooks();
+  const latestBooks = getLatestBooks(books, 6);
+  const featuredBooks = latestBooks.slice(0, 3);
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
@@ -70,7 +59,19 @@ export default async function HomePage() {
       <HeroSlider books={featuredBooks} />
 
       <div className="mt-5">
-        <StatsRow stats={stats} />
+        <Suspense
+          fallback={
+            <StatsRow
+              stats={{
+                booksInLibrary: books.length,
+                currentlyBorrowed: 0,
+                booksContributed: 0,
+              }}
+            />
+          }
+        >
+          <PersonalizedStats books={books} />
+        </Suspense>
       </div>
 
       <FreshShelves books={latestBooks} />

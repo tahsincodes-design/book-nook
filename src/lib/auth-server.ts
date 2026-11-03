@@ -3,6 +3,7 @@ import "server-only";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
+import { nextCookies } from "better-auth/next-js";
 import { updateTag } from "next/cache";
 import { MongoClient } from "mongodb";
 
@@ -32,7 +33,6 @@ const db = mongoClient.db(databaseName);
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
-const googleEnabled = Boolean(googleClientId && googleClientSecret);
 
 // The books and borrows created before BetterAuth was wired up were stamped
 // with the demo reader. The first real account claims them so the existing
@@ -86,19 +86,22 @@ export const auth = betterAuth({
   database: mongodbAdapter(db),
   emailAndPassword: {
     enabled: true,
+    requireEmailVerification: false,
     // The registration form asks for 6 characters; BetterAuth defaults to 8.
     minPasswordLength: 6,
     // Registration should land on the Login page, not sign the reader in.
     autoSignIn: false,
   },
-  socialProviders: googleEnabled
-    ? {
-        google: {
-          clientId: googleClientId,
-          clientSecret: googleClientSecret,
-        },
-      }
-    : {},
+  socialProviders:
+    googleClientId && googleClientSecret
+      ? {
+          google: {
+            clientId: googleClientId,
+            clientSecret: googleClientSecret,
+          },
+        }
+      : {},
+  plugins: [nextCookies()],
   user: {
     additionalFields: {
       location: {

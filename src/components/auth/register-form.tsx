@@ -142,6 +142,13 @@ export function RegisterForm({ redirectTo }: { redirectTo: string }) {
       }
 
       router.push(`/login?${params.toString()}`);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Could not create your account. Please try again.";
+      setErrors({ form: message });
+      toast.error("Could not register", { description: message });
     } finally {
       setIsSubmitting(false);
     }
@@ -161,7 +168,7 @@ export function RegisterForm({ redirectTo }: { redirectTo: string }) {
     try {
       const { error } = await authClient.signIn.social({
         provider: "google",
-        callbackURL: `${window.location.origin}/`,
+        callbackURL: `${window.location.origin}${redirectTo}`,
       });
 
       if (error) {
@@ -170,9 +177,10 @@ export function RegisterForm({ redirectTo }: { redirectTo: string }) {
         });
         setIsGoogleLoading(false);
       }
-    } catch {
+    } catch (error) {
       toast.error("Could not continue with Google", {
-        description: "Please try again.",
+        description:
+          error instanceof Error ? error.message : "Please try again.",
       });
       setIsGoogleLoading(false);
     }
