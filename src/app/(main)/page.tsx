@@ -10,13 +10,27 @@ import { WelcomeMessage } from "@/components/home/welcome-message";
 import { getBooks, getLatestBooks } from "@/lib/api/books";
 import { getMyBorrows } from "@/lib/api/borrows";
 import { getCurrentUser } from "@/lib/auth";
+import {
+  FeaturedBooksLoading,
+  FreshBooksLoading,
+  HomeStatsLoading,
+  ReadersCornerLoading,
+} from "@/components/loading/route-skeletons";
 
-async function PersonalizedStats({
-  books,
-}: {
-  books: Awaited<ReturnType<typeof getBooks>>;
-}) {
-  const user = await getCurrentUser();
+async function FeaturedBooks() {
+  const books = await getBooks();
+  const featuredBooks = getLatestBooks(books, 6).slice(0, 3);
+
+  return <HeroSlider books={featuredBooks} />;
+}
+
+async function LatestArrivals() {
+  const books = await getBooks();
+  return <FreshShelves books={getLatestBooks(books, 6)} />;
+}
+
+async function PersonalizedStats() {
+  const [books, user] = await Promise.all([getBooks(), getCurrentUser()]);
   const myBorrows = user ? await getMyBorrows(user.email) : [];
 
   const stats = {
@@ -34,11 +48,7 @@ async function PersonalizedStats({
   return <StatsRow stats={stats} />;
 }
 
-export default async function HomePage() {
-  const books = await getBooks();
-  const latestBooks = getLatestBooks(books, 6);
-  const featuredBooks = latestBooks.slice(0, 3);
-
+export default function HomePage() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
       <h1 className="sr-only">BookNook library overview</h1>
@@ -56,34 +66,21 @@ export default async function HomePage() {
         <WelcomeMessage />
       </div>
 
-      <HeroSlider books={featuredBooks} />
+      <Suspense fallback={<FeaturedBooksLoading />}>
+        <FeaturedBooks />
+      </Suspense>
 
       <div className="mt-5">
-        <Suspense
-          fallback={
-            <StatsRow
-              stats={{
-                booksInLibrary: books.length,
-                currentlyBorrowed: 0,
-                booksContributed: 0,
-              }}
-            />
-          }
-        >
-          <PersonalizedStats books={books} />
+        <Suspense fallback={<HomeStatsLoading />}>
+          <PersonalizedStats />
         </Suspense>
       </div>
 
-      <FreshShelves books={latestBooks} />
+      <Suspense fallback={<FreshBooksLoading />}>
+        <LatestArrivals />
+      </Suspense>
       <CuratedShelves />
-      <Suspense
-        fallback={
-          <div
-            className="mt-12 h-56 animate-pulse rounded-3xl bg-muted/50"
-            aria-hidden="true"
-          />
-        }
-      >
+      <Suspense fallback={<ReadersCornerLoading />}>
         <ReadersCorner />
       </Suspense>
       <ReadingJourney />

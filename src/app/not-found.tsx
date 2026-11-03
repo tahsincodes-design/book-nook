@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { connection } from "next/server";
 
 import { NotFoundContent } from "@/components/layout/not-found-content";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -12,6 +13,10 @@ export const metadata: Metadata = {
 };
 
 async function NavbarWithSession() {
+  // The session lookup and navbar counts depend on the incoming request. Keep
+  // them out of the prerendered 404 shell so BetterAuth's timestamps are only
+  // evaluated at request time.
+  await connection();
   const user = await getCurrentUser();
   const counts = await getNavCounts(user);
 

@@ -168,7 +168,8 @@ export function RegisterForm({ redirectTo }: { redirectTo: string }) {
     try {
       const { error } = await authClient.signIn.social({
         provider: "google",
-        callbackURL: `${window.location.origin}${redirectTo}`,
+        // Registering with Google drops the reader on the home page.
+        callbackURL: `${window.location.origin}/`,
       });
 
       if (error) {

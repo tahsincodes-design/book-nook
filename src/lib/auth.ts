@@ -52,7 +52,9 @@ function toIsoDate(value: Date | string | undefined) {
     }
   }
 
-  return new Date().toISOString();
+  // BetterAuth always stamps `createdAt`; this fallback stays deterministic so
+  // the value can never introduce a request-dependent timestamp during render.
+  return new Date(0).toISOString();
 }
 
 export async function getSession() {
