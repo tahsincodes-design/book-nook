@@ -4,14 +4,22 @@ import { APIError, createAuthMiddleware } from "better-auth/api";
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { nextCookies } from "better-auth/next-js";
+import { jwt } from "better-auth/plugins";
 import { updateTag } from "next/cache";
 import { MongoClient } from "mongodb";
 
 const mongoUri = process.env.MONGODB_URI;
+const betterAuthUrl = process.env.BETTER_AUTH_URL;
 
 if (!mongoUri) {
   throw new Error(
     "MONGODB_URI is not set. Add it to .env so BetterAuth can store readers.",
+  );
+}
+
+if (!betterAuthUrl) {
+  throw new Error(
+    "BETTER_AUTH_URL is not set. Add it to .env so API JWTs have a stable issuer.",
   );
 }
 
@@ -81,7 +89,7 @@ async function claimLegacyDemoData(user: {
 }
 
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL,
+  baseURL: betterAuthUrl,
   secret: process.env.BETTER_AUTH_SECRET,
   database: mongodbAdapter(db),
   emailAndPassword: {
@@ -101,7 +109,24 @@ export const auth = betterAuth({
           },
         }
       : {},
-  plugins: [nextCookies()],
+  plugins: [
+    jwt({
+      jwks: {
+        keyPairConfig: { alg: "EdDSA" },
+      },
+      jwt: {
+        audience: process.env.JWT_AUDIENCE ?? "booknook-api",
+        expirationTime: "10m",
+        issuer: betterAuthUrl,
+        definePayload: ({ user }) => ({
+          email: user.email,
+          name: user.name,
+        }),
+      },
+      disableSettingJwtHeader: true,
+    }),
+    nextCookies(),
+  ],
   user: {
     additionalFields: {
       location: {

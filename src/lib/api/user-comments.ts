@@ -1,4 +1,5 @@
 import { API_URL } from "@/lib/api/config";
+import { getApiAccessToken } from "@/lib/auth";
 
 export type UserComment = {
   id: string;
@@ -112,18 +113,15 @@ async function responseMessage(response: Response, fallback: string) {
   return fallback;
 }
 
-export async function getUserComments(
-  userId: string,
-  email?: string,
-): Promise<UserComment[]> {
+export async function getUserComments(userId: string): Promise<UserComment[]> {
+  const token = await getApiAccessToken();
   const query = new URLSearchParams({ userId });
 
-  if (email) {
-    query.set("email", email);
-  }
-
   const response = await fetch(`${API_URL}/usersComments?${query}`, {
-    headers: { Accept: "application/json" },
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     cache: "no-store",
   });
 
@@ -140,22 +138,18 @@ export async function getUserComments(
 }
 
 export async function postUserComment(
-  userId: string,
-  name: string,
-  email: string,
   content: string,
   rating: number,
 ): Promise<void> {
+  const token = await getApiAccessToken();
   const response = await fetch(`${API_URL}/usersComments`, {
     method: "POST",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
-      userId,
-      name,
-      email,
       comment: content,
       rating,
       stars: rating,

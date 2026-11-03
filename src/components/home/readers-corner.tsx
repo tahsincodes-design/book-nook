@@ -19,7 +19,7 @@ export async function ReadersCorner() {
   let loadError: string | null = null;
 
   try {
-    comments = await getUserComments(user.id, user.email);
+    comments = await getUserComments(user.id);
   } catch (error) {
     loadError =
       error instanceof Error ? error.message : "Could not load comments.";

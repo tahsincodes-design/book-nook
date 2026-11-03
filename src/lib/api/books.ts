@@ -83,7 +83,7 @@ function extractBooks(payload: unknown): Book[] {
 
 /**
  * Server-side book source. Always reads from the Express backend at
- * `NEXT_PUBLIC_API_URL` (defaults to http://localhost:5000).
+ * `API_URL` from the frontend `.env` (defaults to http://localhost:5000).
  *
  * If the backend is unreachable or the route is not implemented yet, the
  * shelves render empty instead of taking the whole page down.

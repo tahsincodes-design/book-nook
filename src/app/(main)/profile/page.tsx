@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { getBooks } from "@/lib/api/books";
 import { requireUser } from "@/lib/auth";
 
+export const instant = false;
+
 export const metadata: Metadata = {
   title: "My profile",
   description: "Update your BookNook reader profile and account details.",

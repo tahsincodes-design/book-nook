@@ -35,7 +35,7 @@ export async function addUserComment(
   }
 
   try {
-    await postUserComment(user.id, user.name, user.email, comment, rating);
+    await postUserComment(comment, rating);
     return { ok: true };
   } catch (error) {
     return {
@@ -56,7 +56,7 @@ export async function refreshUserComments() {
   try {
     return {
       ok: true as const,
-      comments: await getUserComments(user.id, user.email),
+      comments: await getUserComments(user.id),
     };
   } catch (error) {
     return {

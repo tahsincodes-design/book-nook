@@ -4,7 +4,7 @@ import { updateTag } from "next/cache";
 
 import { API_URL } from "@/lib/api/config";
 import { normalizeBook } from "@/lib/api/books";
-import { getCurrentUser } from "@/lib/auth";
+import { getApiAccessToken, getCurrentUser } from "@/lib/auth";
 import {
   bookCategories,
   MAX_COPIES,
@@ -133,10 +133,14 @@ async function ensureBookOwnership(id: string): Promise<MutationResult | null> {
   }
 
   try {
+    const token = await getApiAccessToken();
     const response = await fetch(
       `${API_URL}/books/${encodeURIComponent(id)}`,
       {
-        headers: { Accept: "application/json" },
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         cache: "no-store",
       },
     );
@@ -190,15 +194,16 @@ export async function createBook(
   }
 
   try {
+    const token = await getApiAccessToken();
     const response = await fetch(`${API_URL}/add-books`, {
       method: "POST",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         ...validation.fields,
-        addedBy: { name: user.name, email: user.email },
         createdAt: new Date().toISOString(),
       }),
       cache: "no-store",
@@ -255,6 +260,7 @@ export async function updateBook(
   }
 
   try {
+    const token = await getApiAccessToken();
     const response = await fetch(
       `${API_URL}/books/${encodeURIComponent(id)}`,
       {
@@ -262,6 +268,7 @@ export async function updateBook(
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(validation.fields),
         cache: "no-store",
@@ -303,11 +310,15 @@ export async function deleteBook(id: string): Promise<MutationResult> {
   }
 
   try {
+    const token = await getApiAccessToken();
     const response = await fetch(
       `${API_URL}/books/${encodeURIComponent(bookId)}`,
       {
         method: "DELETE",
-        headers: { Accept: "application/json" },
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         cache: "no-store",
       },
     );

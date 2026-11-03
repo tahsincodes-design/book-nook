@@ -9,6 +9,8 @@ import { getBooks } from "@/lib/api/books";
 import { requireUser } from "@/lib/auth";
 import { filterOwnedBooks } from "@/lib/owned-books";
 
+export const instant = false;
+
 export const metadata: Metadata = {
   title: "My collection",
   description: "The books you have added to the BookNook shelves.",

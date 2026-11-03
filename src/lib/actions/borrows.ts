@@ -4,7 +4,7 @@ import { revalidatePath, updateTag } from "next/cache";
 
 import { API_URL } from "@/lib/api/config";
 import { getMyBorrows } from "@/lib/api/borrows";
-import { getCurrentUser } from "@/lib/auth";
+import { getApiAccessToken, getCurrentUser } from "@/lib/auth";
 
 export type BorrowResult =
   | { ok: true; message: string }
@@ -26,9 +26,8 @@ async function readApiMessage(
 }
 
 function refreshBorrowData(bookId?: string) {
-  // The catalogue copies changed, and the reader's loan list changed too.
+  // The catalogue copies changed, and the current page needs fresh loan data.
   updateTag("books");
-  updateTag("borrows");
   revalidatePath("/my-borrows");
   revalidatePath("/my-books");
   revalidatePath("/books");
@@ -52,17 +51,15 @@ export async function borrowBook(bookId: string): Promise<BorrowResult> {
   }
 
   try {
+    const token = await getApiAccessToken();
     const response = await fetch(`${API_URL}/borrows`, {
       method: "POST",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        bookId: id,
-        email: user.email,
-        name: user.name,
-      }),
+      body: JSON.stringify({ bookId: id }),
       cache: "no-store",
     });
 
@@ -120,11 +117,15 @@ export async function returnBook(borrowId: string): Promise<BorrowResult> {
   }
 
   try {
+    const token = await getApiAccessToken();
     const response = await fetch(
       `${API_URL}/my-borrows/${encodeURIComponent(id)}`,
       {
         method: "DELETE",
-        headers: { Accept: "application/json" },
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         cache: "no-store",
       },
     );

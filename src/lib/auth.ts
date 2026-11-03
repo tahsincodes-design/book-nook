@@ -59,6 +59,16 @@ export async function getSession() {
   return auth.api.getSession({ headers: await headers() });
 }
 
+export async function getApiAccessToken(): Promise<string> {
+  const { token } = await auth.api.getToken({ headers: await headers() });
+
+  if (!token) {
+    throw new Error("Could not create an API access token for this session.");
+  }
+
+  return token;
+}
+
 export async function getCurrentUser(): Promise<SessionUser | null> {
   const session = await getSession();
   const user = session?.user as BetterAuthUser | undefined;

@@ -5,6 +5,8 @@ import { RegisterForm } from "@/components/auth/register-form";
 import { getCurrentUser } from "@/lib/auth";
 import { safeRedirectPath } from "@/lib/redirect";
 
+export const instant = false;
+
 export const metadata: Metadata = {
   title: "Register",
   description: "Create a BookNook reader account.",

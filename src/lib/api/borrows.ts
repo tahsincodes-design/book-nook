@@ -1,6 +1,5 @@
-import { cacheLife, cacheTag } from "next/cache";
-
 import { API_URL } from "@/lib/api/config";
+import { getApiAccessToken } from "@/lib/auth";
 
 export type Borrow = {
   _id: string;
@@ -75,17 +74,8 @@ function normalizeBorrow(value: unknown): Borrow | null {
   };
 }
 
-/**
- * Reads the active loans for one reader from `GET /my-borrows/:email`.
- *
- * The list is cached under the `borrows` tag so borrow and return server
- * actions can refresh it with `updateTag("borrows")`.
- */
+/** Reads the active loans for one reader from the authenticated API. */
 export async function getMyBorrows(email: string): Promise<Borrow[]> {
-  "use cache";
-  cacheLife("minutes");
-  cacheTag("borrows");
-
   const normalizedEmail = email?.trim().toLowerCase() ?? "";
 
   if (!normalizedEmail) {
@@ -93,11 +83,15 @@ export async function getMyBorrows(email: string): Promise<Borrow[]> {
   }
 
   try {
+    const token = await getApiAccessToken();
     const response = await fetch(
       `${API_URL}/my-borrows/${encodeURIComponent(normalizedEmail)}`,
       {
-        headers: { Accept: "application/json" },
-        next: { tags: ["borrows"] },
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
       },
     );
 
