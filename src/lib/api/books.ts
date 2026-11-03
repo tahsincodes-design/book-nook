@@ -22,7 +22,7 @@ function normalizeCategory(value: unknown): BookCategory {
     : "Others";
 }
 
-function normalizeBook(value: unknown): Book | null {
+export function normalizeBook(value: unknown): Book | null {
   if (!isRecord(value)) {
     return null;
   }
@@ -114,6 +114,39 @@ export async function getBooks(): Promise<Book[]> {
     );
     return [];
   }
+}
+
+/**
+ * Reads a single book from `GET /books/:id`. The list endpoint is the
+ * fallback so the detail page keeps working if the single-book route is not
+ * available on the API yet.
+ */
+export async function getBook(id: string): Promise<Book | null> {
+  try {
+    const response = await fetch(`${API_URL}/books/${encodeURIComponent(id)}`, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+
+    if (response.ok) {
+      const book = normalizeBook(await response.json());
+
+      if (book) {
+        return book;
+      }
+    } else {
+      console.warn(
+        `[booknook] GET ${API_URL}/books/${id} responded with ${response.status}. Falling back to the catalogue.`,
+      );
+    }
+  } catch (error) {
+    console.warn(
+      `[booknook] Could not reach ${API_URL}/books/${id}. Falling back to the catalogue.`,
+      error,
+    );
+  }
+
+  return findBook(await getBooks(), id);
 }
 
 export function sortByNewest(books: Book[]): Book[] {

@@ -3,11 +3,14 @@
 import { updateTag } from "next/cache";
 
 import { API_URL } from "@/lib/api/config";
+import { normalizeBook } from "@/lib/api/books";
 import { getCurrentUser } from "@/lib/auth";
 import {
   bookCategories,
+  MAX_COPIES,
   MAX_DESCRIPTION_LENGTH,
 } from "@/lib/constants/books";
+import { isBookOwner } from "@/lib/owned-books";
 
 export type CreateBookInput = {
   title: string;
@@ -15,32 +18,46 @@ export type CreateBookInput = {
   category: string;
   image: string;
   description: string;
+  totalCopies: number;
+};
+
+export type UpdateBookInput = CreateBookInput & {
+  id: string;
 };
 
 export type CreateBookResult =
   | { ok: true; id: string | null }
   | { ok: false; message: string };
 
-type CreateBookResponse = {
+export type MutationResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
+type BookFields = {
+  title: string;
+  author: string;
+  category: string;
+  image: string;
+  description: string;
+  totalCopies: number;
+};
+
+type ValidationResult =
+  | { ok: true; fields: BookFields }
+  | { ok: false; message: string };
+
+type ApiResponse = {
   message?: string;
   id?: string | number;
 };
 
-export async function createBook(
-  input: CreateBookInput,
-): Promise<CreateBookResult> {
-  // Never trust the browser for ownership details.
-  const user = await getCurrentUser();
-
-  if (!user) {
-    return { ok: false, message: "Please sign in to add a book." };
-  }
-
+function validateBookInput(input: CreateBookInput): ValidationResult {
   const title = input.title?.trim() ?? "";
   const author = input.author?.trim() ?? "";
   const category = input.category?.trim() ?? "";
   const image = input.image?.trim() ?? "";
   const description = input.description?.trim() ?? "";
+  const totalCopies = Number(input.totalCopies);
 
   if (title.length < 2) {
     return { ok: false, message: "Add a book title with at least 2 characters." };
@@ -75,6 +92,103 @@ export async function createBook(
     };
   }
 
+  if (
+    !Number.isInteger(totalCopies) ||
+    totalCopies < 0 ||
+    totalCopies > MAX_COPIES
+  ) {
+    return {
+      ok: false,
+      message: `Choose a whole number of copies between 0 and ${MAX_COPIES}.`,
+    };
+  }
+
+  return {
+    ok: true,
+    fields: { title, author, category, image, description, totalCopies },
+  };
+}
+
+async function readApiMessage(
+  response: Response,
+  fallback: string,
+): Promise<string> {
+  const payload = (await response.json().catch(() => null)) as
+    | ApiResponse
+    | null;
+
+  return payload?.message ?? fallback;
+}
+
+/**
+ * Reads the stored book and confirms the current reader added it. The UI hides
+ * the controls, but the check has to happen here too so a crafted request
+ * cannot update or delete someone else's book.
+ */
+async function ensureBookOwnership(id: string): Promise<MutationResult | null> {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return { ok: false, message: "Please sign in to manage this book." };
+  }
+
+  try {
+    const response = await fetch(
+      `${API_URL}/books/${encodeURIComponent(id)}`,
+      {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      },
+    );
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        message: "This book could not be found in the library.",
+      };
+    }
+
+    const book = normalizeBook(await response.json().catch(() => null));
+
+    if (!book) {
+      return {
+        ok: false,
+        message: "This book could not be found in the library.",
+      };
+    }
+
+    if (!isBookOwner(book, user)) {
+      return {
+        ok: false,
+        message: "Only the reader who added this book can edit or delete it.",
+      };
+    }
+
+    return null;
+  } catch {
+    return {
+      ok: false,
+      message: `Could not reach the books API at ${API_URL}. Make sure the server is running.`,
+    };
+  }
+}
+
+export async function createBook(
+  input: CreateBookInput,
+): Promise<CreateBookResult> {
+  // Never trust the browser for ownership details.
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return { ok: false, message: "Please sign in to add a book." };
+  }
+
+  const validation = validateBookInput(input);
+
+  if (!validation.ok) {
+    return validation;
+  }
+
   try {
     const response = await fetch(`${API_URL}/add-books`, {
       method: "POST",
@@ -83,30 +197,26 @@ export async function createBook(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        title,
-        author,
-        category,
-        image,
-        description,
-        totalCopies: 1,
+        ...validation.fields,
         addedBy: { name: user.name, email: user.email },
         createdAt: new Date().toISOString(),
       }),
       cache: "no-store",
     });
 
-    const payload = (await response.json().catch(() => null)) as
-      | CreateBookResponse
-      | null;
-
     if (!response.ok) {
       return {
         ok: false,
-        message:
-          payload?.message ??
+        message: await readApiMessage(
+          response,
           `The books API responded with status ${response.status}.`,
+        ),
       };
     }
+
+    const payload = (await response.json().catch(() => null)) as
+      | ApiResponse
+      | null;
 
     // Refresh the cached catalogue so the new book appears immediately.
     updateTag("books");
@@ -115,6 +225,106 @@ export async function createBook(
       ok: true,
       id: payload?.id !== undefined ? String(payload.id) : null,
     };
+  } catch {
+    return {
+      ok: false,
+      message: `Could not reach the books API at ${API_URL}. Make sure the server is running.`,
+    };
+  }
+}
+
+export async function updateBook(
+  input: UpdateBookInput,
+): Promise<MutationResult> {
+  const id = input.id?.trim() ?? "";
+
+  if (!id) {
+    return { ok: false, message: "This book is missing its identifier." };
+  }
+
+  const validation = validateBookInput(input);
+
+  if (!validation.ok) {
+    return validation;
+  }
+
+  const ownershipError = await ensureBookOwnership(id);
+
+  if (ownershipError) {
+    return ownershipError;
+  }
+
+  try {
+    const response = await fetch(
+      `${API_URL}/books/${encodeURIComponent(id)}`,
+      {
+        method: "PATCH",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(validation.fields),
+        cache: "no-store",
+      },
+    );
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        message: await readApiMessage(
+          response,
+          `The books API responded with status ${response.status}.`,
+        ),
+      };
+    }
+
+    updateTag("books");
+
+    return { ok: true };
+  } catch {
+    return {
+      ok: false,
+      message: `Could not reach the books API at ${API_URL}. Make sure the server is running.`,
+    };
+  }
+}
+
+export async function deleteBook(id: string): Promise<MutationResult> {
+  const bookId = id?.trim() ?? "";
+
+  if (!bookId) {
+    return { ok: false, message: "This book is missing its identifier." };
+  }
+
+  const ownershipError = await ensureBookOwnership(bookId);
+
+  if (ownershipError) {
+    return ownershipError;
+  }
+
+  try {
+    const response = await fetch(
+      `${API_URL}/books/${encodeURIComponent(bookId)}`,
+      {
+        method: "DELETE",
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      },
+    );
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        message: await readApiMessage(
+          response,
+          `The books API responded with status ${response.status}.`,
+        ),
+      };
+    }
+
+    updateTag("books");
+
+    return { ok: true };
   } catch {
     return {
       ok: false,

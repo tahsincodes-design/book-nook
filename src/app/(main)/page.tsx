@@ -7,17 +7,22 @@ import { ReadersCorner } from "@/components/home/readers-corner";
 import { ReadingJourney } from "@/components/home/reading-journey";
 import { StatsRow } from "@/components/home/stats-row";
 import { TodayLabel } from "@/components/home/today-label";
+import { WelcomeMessage } from "@/components/home/welcome-message";
 import { getBooks, getLatestBooks } from "@/lib/api/books";
+import { getMyBorrows } from "@/lib/api/borrows";
 import { demoUser } from "@/lib/demo/user";
 
 export default async function HomePage() {
-  const books = await getBooks();
+  const [books, myBorrows] = await Promise.all([
+    getBooks(),
+    getMyBorrows(demoUser.email),
+  ]);
   const latestBooks = getLatestBooks(books, 6);
   const featuredBooks = latestBooks.slice(0, 3);
 
   const stats = {
     booksInLibrary: books.length,
-    currentlyBorrowed: demoUser.borrowedCount,
+    currentlyBorrowed: myBorrows.length,
     booksContributed: books.filter(
       (book) => book.addedBy.email === demoUser.email,
     ).length,
@@ -37,9 +42,7 @@ export default async function HomePage() {
         >
           <TodayLabel />
         </Suspense>
-        <p className="hidden text-xs text-muted-foreground sm:block">
-          Welcome back, {demoUser.name.split(" ")[0]}.
-        </p>
+        <WelcomeMessage />
       </div>
 
       <HeroSlider books={featuredBooks} />

@@ -16,6 +16,11 @@ export type NavItem = {
   count?: number;
 };
 
+export type NavCounts = {
+  myBooks: number;
+  myBorrows: number;
+};
+
 export const primaryNav: NavItem[] = [
   { label: "Home", href: "/", icon: House },
   { label: "All Books", href: "/books", icon: Compass },
@@ -25,13 +30,11 @@ export const primaryNav: NavItem[] = [
     href: "/my-books",
     icon: Library,
     private: true,
-    count: 2,
   },
   {
     label: "My Borrows",
     href: "/my-borrows",
     icon: BookOpen,
     private: true,
-    count: 0,
   },
 ];

@@ -1,20 +1,48 @@
 import type { Metadata } from "next";
-import { BookOpen } from "lucide-react";
+import Link from "next/link";
+import { Compass } from "lucide-react";
 
-import { ComingSoonPage } from "@/components/layout/coming-soon-page";
+import { MyBorrowsView } from "@/components/borrows/my-borrows-view";
+import { PageHeader } from "@/components/layout/page-header";
+import { Button } from "@/components/ui/button";
+import { getBooks } from "@/lib/api/books";
+import { getMyBorrows, type Borrow } from "@/lib/api/borrows";
+import { getNow } from "@/lib/api/clock";
+import { getCurrentUser } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Borrowed books",
+  description: "The books you are reading right now, with due dates.",
 };
 
-export default function MyBorrowsPage() {
+export default async function MyBorrowsPage() {
+  const user = await getCurrentUser();
+  const [borrows, books, now] = await Promise.all([
+    user ? getMyBorrows(user.email) : Promise.resolve<Borrow[]>([]),
+    getBooks(),
+    getNow(),
+  ]);
+
   return (
-    <ComingSoonPage
-      eyebrow="My reading"
-      title="Borrowed books"
-      description="Everything you are reading right now, in one quiet corner."
-      note="Borrow and return actions will be connected to the authenticated API, including copy tracking and double-borrow checks."
-      icon={BookOpen}
-    />
+    <div className="mx-auto w-full max-w-7xl px-4 pt-8 pb-10 sm:px-6 lg:px-8">
+      <PageHeader
+        eyebrow="My reading"
+        title="Borrowed books"
+        description="Everything you are reading right now, with due dates and a one-click return."
+        action={
+          <Button
+            render={<Link href="/books" />}
+            nativeButton={false}
+            variant="outline"
+            className="rounded-full"
+          >
+            <Compass className="size-4" />
+            Browse library
+          </Button>
+        }
+      />
+
+      <MyBorrowsView borrows={borrows} books={books} now={now} />
+    </div>
   );
 }

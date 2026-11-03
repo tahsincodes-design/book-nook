@@ -41,12 +41,16 @@ import { createBook } from "@/lib/actions/books";
 import type { SessionUser } from "@/lib/auth";
 import {
   bookCategories,
+  MAX_COPIES,
   MAX_COVER_BYTES,
   MAX_DESCRIPTION_LENGTH,
 } from "@/lib/constants/books";
 
 type FormErrors = Partial<
-  Record<"title" | "author" | "category" | "image" | "description", string>
+  Record<
+    "title" | "author" | "category" | "copies" | "image" | "description",
+    string
+  >
 >;
 
 type UploadResponse = {
@@ -60,6 +64,7 @@ export function AddBookForm({ user }: { user: SessionUser }) {
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [category, setCategory] = useState("");
+  const [copies, setCopies] = useState("1");
   const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -147,6 +152,17 @@ export function AddBookForm({ user }: { user: SessionUser }) {
       next.category = "Choose a category for the shelf.";
     }
 
+    const copiesValue = Number(copies);
+
+    if (
+      copies.trim() === "" ||
+      !Number.isInteger(copiesValue) ||
+      copiesValue < 0 ||
+      copiesValue > MAX_COPIES
+    ) {
+      next.copies = `Enter a whole number between 0 and ${MAX_COPIES}.`;
+    }
+
     if (description.trim().length < 10) {
       next.description = "Write at least 10 characters about the book.";
     } else if (description.length > MAX_DESCRIPTION_LENGTH) {
@@ -224,6 +240,7 @@ export function AddBookForm({ user }: { user: SessionUser }) {
         category,
         image: cover,
         description,
+        totalCopies: Number(copies),
       });
 
       if (!result.ok) {
@@ -238,6 +255,7 @@ export function AddBookForm({ user }: { user: SessionUser }) {
       setTitle("");
       setAuthor("");
       setCategory("");
+      setCopies("1");
       setDescription("");
       setImageUrl("");
       removeFile();
@@ -310,38 +328,77 @@ export function AddBookForm({ user }: { user: SessionUser }) {
             </div>
           </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="book-category">Category</Label>
-            <Select
-              value={category}
-              onValueChange={(value) => {
-                setCategory(value ?? "");
-                clearError("category");
-              }}
-            >
-              <SelectTrigger
-                id="book-category"
-                className="h-10 w-full"
-                aria-invalid={Boolean(errors.category)}
-                aria-describedby={
-                  errors.category ? "book-category-error" : undefined
-                }
+          <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_150px]">
+            <div className="grid gap-2">
+              <Label htmlFor="book-category">Category</Label>
+              <Select
+                value={category}
+                onValueChange={(value) => {
+                  setCategory(value ?? "");
+                  clearError("category");
+                }}
               >
-                <SelectValue placeholder="Choose a category" />
-              </SelectTrigger>
-              <SelectContent>
-                {bookCategories.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.category && (
-              <p id="book-category-error" className="text-xs text-destructive">
-                {errors.category}
-              </p>
-            )}
+                <SelectTrigger
+                  id="book-category"
+                  className="h-10 w-full"
+                  aria-invalid={Boolean(errors.category)}
+                  aria-describedby={
+                    errors.category ? "book-category-error" : undefined
+                  }
+                >
+                  <SelectValue placeholder="Choose a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {bookCategories.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.category && (
+                <p
+                  id="book-category-error"
+                  className="text-xs text-destructive"
+                >
+                  {errors.category}
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="book-copies">Copies</Label>
+              <Input
+                id="book-copies"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={MAX_COPIES}
+                step={1}
+                value={copies}
+                onChange={(event) => {
+                  setCopies(event.target.value);
+                  clearError("copies");
+                }}
+                className="h-10"
+                aria-invalid={Boolean(errors.copies)}
+                aria-describedby={
+                  errors.copies ? "book-copies-error" : "book-copies-hint"
+                }
+              />
+              {errors.copies ? (
+                <p id="book-copies-error" className="text-xs text-destructive">
+                  {errors.copies}
+                </p>
+              ) : (
+                <p
+                  id="book-copies-hint"
+                  className="text-xs text-muted-foreground"
+                >
+                  How many readers can borrow it.
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="grid gap-2">
@@ -550,6 +607,10 @@ export function AddBookForm({ user }: { user: SessionUser }) {
               <Badge className="mt-2 border-0 bg-brand-sage/20 text-brand-forest dark:bg-brand-sage/10 dark:text-brand-sage">
                 {category || "Category"}
               </Badge>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {Number(copies) || 0}{" "}
+                {Number(copies) === 1 ? "copy" : "copies"} available
+              </p>
             </div>
           </CardContent>
         </Card>

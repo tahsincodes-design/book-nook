@@ -1,14 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { LogOut, Menu, UserRound } from "lucide-react";
+import { Library, LogOut, Menu, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "cn";
 
+import { SignInDialog } from "@/components/auth/sign-in-dialog";
 import { BookNookLogo } from "@/components/brand/booknook-logo";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import {
+  useDemoSession,
+  type DemoProfile,
+} from "@/components/providers/demo-session-provider";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,11 +33,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { primaryNav, type NavItem } from "@/lib/constants/navigation";
-import { demoUser } from "@/lib/demo/user";
-
-// Until BetterAuth is wired up, the demo reader is treated as signed in so the
-// private routes and the account menu can be reviewed.
-const isSignedIn = true;
 
 function isActivePath(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -40,8 +40,20 @@ function isActivePath(pathname: string, href: string) {
 
 export function SiteNavbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { isSignedIn, user, signOut } = useDemoSession();
   const navItems = primaryNav.filter((item) => isSignedIn || !item.private);
+
+  function handleSignOut() {
+    signOut();
+    setMenuOpen(false);
+    toast.success("Signed out", {
+      description: "You can sign back in anytime with the demo account.",
+    });
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-xl">
@@ -70,26 +82,10 @@ export function SiteNavbar() {
         <div className="ml-auto flex items-center gap-1.5">
           <ThemeToggle />
 
-          {isSignedIn ? (
-            <UserMenu />
+          {isSignedIn && user ? (
+            <UserMenu user={user} onSignOut={handleSignOut} />
           ) : (
-            <div className="hidden items-center gap-1.5 sm:flex">
-              <Button
-                render={<Link href="/login" />}
-                nativeButton={false}
-                variant="ghost"
-                className="rounded-full"
-              >
-                Login
-              </Button>
-              <Button
-                render={<Link href="/register" />}
-                nativeButton={false}
-                className="rounded-full"
-              >
-                Register
-              </Button>
-            </div>
+            <SignInDialog className="hidden rounded-full sm:inline-flex" />
           )}
 
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
@@ -153,35 +149,63 @@ export function SiteNavbar() {
               </nav>
 
               <SheetFooter className="mt-auto gap-3 border-t border-border/60 p-4">
-                <div className="flex items-center gap-3">
-                  <Avatar>
-                    <AvatarFallback className="bg-[#d9c6b5] text-[0.65rem] font-semibold text-[#4b3a2c] dark:bg-[#3a2d25] dark:text-[#e8d6c4]">
-                      {demoUser.initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-foreground">
-                      {demoUser.name}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {demoUser.email}
-                    </p>
-                  </div>
-                </div>
+                {isSignedIn && user ? (
+                  <>
+                    <Link
+                      href="/profile"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-3 rounded-xl p-1 transition-colors hover:bg-muted"
+                    >
+                      <Avatar>
+                        <AvatarFallback className="bg-[#d9c6b5] text-[0.65rem] font-semibold text-[#4b3a2c] dark:bg-[#3a2d25] dark:text-[#e8d6c4]">
+                          {user.initials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-foreground">
+                          {user.name}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {user.email}
+                        </p>
+                      </div>
+                    </Link>
 
-                <Button
-                  variant="outline"
-                  className="w-full rounded-full"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    toast.info("Logout will be connected to BetterAuth next.", {
-                      description: "You are browsing with the demo reader.",
-                    });
-                  }}
-                >
-                  <LogOut className="size-4" />
-                  Logout
-                </Button>
+                    <div className="grid gap-2">
+                      <Button
+                        render={
+                          <Link
+                            href="/profile"
+                            onClick={() => setMenuOpen(false)}
+                          />
+                        }
+                        nativeButton={false}
+                        variant="outline"
+                        className="w-full rounded-full"
+                      >
+                        <UserRound className="size-4" />
+                        My Profile
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        className="w-full rounded-full text-muted-foreground"
+                        onClick={handleSignOut}
+                      >
+                        <LogOut className="size-4" />
+                        Sign out
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="grid gap-2">
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      Sign in with the demo reader to unlock the private shelves.
+                      No password or authorization is required.
+                    </p>
+                    <SignInDialog className="w-full rounded-full" />
+                  </div>
+                )}
               </SheetFooter>
             </SheetContent>
           </Sheet>
@@ -220,7 +244,13 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
   );
 }
 
-function UserMenu() {
+function UserMenu({
+  user,
+  onSignOut,
+}: {
+  user: DemoProfile;
+  onSignOut: () => void;
+}) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -229,7 +259,7 @@ function UserMenu() {
       >
         <Avatar>
           <AvatarFallback className="bg-[#d9c6b5] text-[0.65rem] font-semibold text-[#4b3a2c] dark:bg-[#3a2d25] dark:text-[#e8d6c4]">
-            {demoUser.initials}
+            {user.initials}
           </AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
@@ -237,31 +267,35 @@ function UserMenu() {
       <DropdownMenuContent align="end" className="w-60">
         <div className="px-2 py-2">
           <span className="block text-sm font-semibold text-foreground">
-            {demoUser.name}
+            {user.name}
           </span>
           <span className="block truncate text-xs text-muted-foreground">
-            {demoUser.email}
+            {user.email}
           </span>
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          render={<Link href="/my-books" />}
+          render={<Link href="/profile" />}
           className="gap-2 px-2 py-2"
         >
           <UserRound className="size-4" aria-hidden="true" />
           My Profile
         </DropdownMenuItem>
         <DropdownMenuItem
+          render={<Link href="/my-books" />}
+          className="gap-2 px-2 py-2"
+        >
+          <Library className="size-4" aria-hidden="true" />
+          My Books
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
           variant="destructive"
           className="gap-2 px-2 py-2"
-          onClick={() =>
-            toast.info("Logout will be connected to BetterAuth next.", {
-              description: "You are browsing with the demo reader.",
-            })
-          }
+          onClick={onSignOut}
         >
           <LogOut className="size-4" aria-hidden="true" />
-          Logout
+          Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
