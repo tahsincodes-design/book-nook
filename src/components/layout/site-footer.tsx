@@ -24,24 +24,26 @@ const socials = [
 
 export function SiteFooter() {
   return (
-    <footer className="mt-16 border-t border-border/70 bg-card/50">
-      <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid gap-10 md:grid-cols-[1.5fr_1fr_1fr]">
-          <div>
+    <footer className="relative mt-20 border-t border-border/80 bg-gradient-to-b from-card/30 to-card/80 backdrop-blur-md">
+      <div className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="grid gap-12 md:grid-cols-[1.5fr_1fr_1fr]">
+
+          {/* Brand & Bio Column */}
+          <div className="space-y-4">
             <Link
               href="/"
               aria-label="BookNook home"
-              className="w-fit rounded-xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="inline-block rounded-xl transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               <BookNookLogo />
             </Link>
-            <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
+            <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
               A small online library for discovering, borrowing, and sharing
               books. Add a book, borrow a book, return a book — and leave a
               little room for stories.
             </p>
 
-            <div className="mt-5 flex items-center gap-2">
+            <div className="flex items-center gap-3 pt-2">
               {socials.map((social) => (
                 <a
                   key={social.label}
@@ -49,7 +51,7 @@ export function SiteFooter() {
                   target="_blank"
                   rel="noreferrer noopener"
                   aria-label={social.label}
-                  className="flex size-9 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-primary hover:text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  className="flex size-10 items-center justify-center rounded-full bg-muted/80 text-foreground transition-all duration-300 hover:scale-110 hover:bg-primary hover:text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none shadow-sm"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -63,16 +65,17 @@ export function SiteFooter() {
             </div>
           </div>
 
+          {/* Explore Links Column */}
           <div>
-            <h2 className="text-[0.62rem] font-semibold tracking-[0.22em] text-brand-terracotta uppercase dark:text-[#e0a48a]">
+            <h3 className="text-xs font-bold uppercase tracking-[0.24em] text-brand-terracotta dark:text-[#e0a48a]">
               Explore
-            </h2>
-            <ul className="mt-4 space-y-2.5">
+            </h3>
+            <ul className="mt-4 space-y-3">
               {primaryNav.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground inline-block hover:translate-x-1 duration-200"
                   >
                     {item.label}
                   </Link>
@@ -81,42 +84,50 @@ export function SiteFooter() {
             </ul>
           </div>
 
+          {/* Contact Information Column */}
           <div>
-            <h2 className="text-[0.62rem] font-semibold tracking-[0.22em] text-brand-terracotta uppercase dark:text-[#e0a48a]">
+            <h3 className="text-xs font-bold uppercase tracking-[0.24em] text-brand-terracotta dark:text-[#e0a48a]">
               Contact
-            </h2>
+            </h3>
             <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
-              <li className="flex items-start gap-2.5">
-                <Mail className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              <li className="flex items-center gap-3 group">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground group-hover:text-primary transition-colors">
+                  <Mail className="size-4" aria-hidden="true" />
+                </span>
                 <a
                   href="mailto:hello@booknook.app"
-                  className="transition-colors hover:text-foreground"
+                  className="transition-colors hover:text-foreground font-medium"
                 >
                   hello@booknook.app
                 </a>
               </li>
-              <li className="flex items-start gap-2.5">
-                <Phone className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              <li className="flex items-center gap-3 group">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground group-hover:text-primary transition-colors">
+                  <Phone className="size-4" aria-hidden="true" />
+                </span>
                 <a
                   href="tel:+8801700000000"
-                  className="transition-colors hover:text-foreground"
+                  className="transition-colors hover:text-foreground font-medium"
                 >
                   +880 1700 000000
                 </a>
               </li>
-              <li className="flex items-start gap-2.5">
-                <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                <span>Dhaka, Bangladesh</span>
+              <li className="flex items-center gap-3 group">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground group-hover:text-primary transition-colors">
+                  <MapPin className="size-4" aria-hidden="true" />
+                </span>
+                <span className="font-medium text-muted-foreground">Dhaka, Bangladesh</span>
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col items-center justify-between gap-2 border-t border-border/70 pt-6 text-[0.7rem] tracking-wide text-muted-foreground sm:flex-row">
-          <p className="font-semibold tracking-[0.16em] uppercase">
+        {/* Bottom Bar */}
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border/80 pt-6 text-xs text-muted-foreground sm:flex-row">
+          <p className="font-semibold tracking-[0.18em] uppercase">
             BookNook &copy; 2026. All rights reserved.
           </p>
-          <p>Made for the love of reading.</p>
+          <p className="font-medium text-muted-foreground/80">Made with passion for the love of reading.</p>
         </div>
       </div>
     </footer>
