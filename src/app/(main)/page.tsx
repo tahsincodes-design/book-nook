@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth-server";
 import { CuratedShelves } from "@/components/home/curated-shelves";
 import { FreshShelves } from "@/components/home/fresh-shelves";
 import { HeroSlider } from "@/components/home/hero-slider";
@@ -10,22 +11,43 @@ import { TodayLabel } from "@/components/home/today-label";
 import { WelcomeMessage } from "@/components/home/welcome-message";
 import { getBooks, getLatestBooks } from "@/lib/api/books";
 import { getMyBorrows } from "@/lib/api/borrows";
-import { demoUser } from "@/lib/demo/user";
 
 export default async function HomePage() {
-  const [books, myBorrows] = await Promise.all([
-    getBooks(),
-    getMyBorrows(demoUser.email),
-  ]);
+  let userEmail: string | undefined = undefined;
+
+  // 1. Safely attempt to retrieve the server session
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+    userEmail = session?.user?.email;
+  } catch (error) {
+    console.warn("[homepage] Could not fetch session:", error);
+  }
+
+  // 2. Fetch books (always public)
+  const books = await getBooks();
+
+  // 3. Conditionally fetch user borrows if logged in, safely catching errors
+  let myBorrows: Awaited<ReturnType<typeof getMyBorrows>> = [];
+  if (userEmail) {
+    try {
+      myBorrows = await getMyBorrows(userEmail);
+    } catch (error) {
+      console.warn("[homepage] Could not fetch user borrows:", error);
+    }
+  }
+
   const latestBooks = getLatestBooks(books, 6);
   const featuredBooks = latestBooks.slice(0, 3);
 
+  // 4. Compute stats safely with optional chaining
   const stats = {
     booksInLibrary: books.length,
     currentlyBorrowed: myBorrows.length,
-    booksContributed: books.filter(
-      (book) => book.addedBy.email === demoUser.email,
-    ).length,
+    booksContributed: userEmail
+      ? books.filter((book) => book.addedBy?.email === userEmail).length
+      : 0,
   };
 
   return (

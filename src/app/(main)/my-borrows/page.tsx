@@ -6,9 +6,9 @@ import { MyBorrowsView } from "@/components/borrows/my-borrows-view";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { getBooks } from "@/lib/api/books";
-import { getMyBorrows, type Borrow } from "@/lib/api/borrows";
+import { getMyBorrows } from "@/lib/api/borrows";
 import { getNow } from "@/lib/api/clock";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Borrowed books",
@@ -16,9 +16,9 @@ export const metadata: Metadata = {
 };
 
 export default async function MyBorrowsPage() {
-  const user = await getCurrentUser();
+  const user = await requireUser("/my-borrows");
   const [borrows, books, now] = await Promise.all([
-    user ? getMyBorrows(user.email) : Promise.resolve<Borrow[]>([]),
+    getMyBorrows(user.email),
     getBooks(),
     getNow(),
   ]);

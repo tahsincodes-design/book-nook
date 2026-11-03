@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { AddBookForm } from "@/components/books/add-book-form";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Add a book",
@@ -15,11 +14,7 @@ export const metadata: Metadata = {
 
 export default async function AddBookPage() {
   // Private route: the add form is only available to a signed-in reader.
-  const user = await getCurrentUser();
-
-  if (!user) {
-    redirect("/");
-  }
+  const user = await requireUser("/add-book");
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pt-8 pb-10 sm:px-6 lg:px-8">

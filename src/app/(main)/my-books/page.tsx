@@ -6,6 +6,8 @@ import { MyBooksView } from "@/components/books/my-books-view";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { getBooks } from "@/lib/api/books";
+import { requireUser } from "@/lib/auth";
+import { filterOwnedBooks } from "@/lib/owned-books";
 
 export const metadata: Metadata = {
   title: "My collection",
@@ -13,7 +15,9 @@ export const metadata: Metadata = {
 };
 
 export default async function MyBooksPage() {
+  const user = await requireUser("/my-books");
   const books = await getBooks();
+  const myBooks = filterOwnedBooks(books, user);
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pt-8 pb-10 sm:px-6 lg:px-8">
@@ -33,7 +37,7 @@ export default async function MyBooksPage() {
         }
       />
 
-      <MyBooksView books={books} />
+      <MyBooksView books={myBooks} />
     </div>
   );
 }

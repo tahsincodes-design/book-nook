@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { DM_Sans, Fraunces } from "next/font/google";
 import "./globals.css";
 
-import { DemoSessionProvider } from "@/components/providers/demo-session-provider";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -44,9 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           enableSystem
           disableTransitionOnChange
         >
-          <DemoSessionProvider>
-            <TooltipProvider>{children}</TooltipProvider>
-          </DemoSessionProvider>
+          <TooltipProvider>{children}</TooltipProvider>
           <Toaster position="bottom-right" richColors />
         </ThemeProvider>
       </body>

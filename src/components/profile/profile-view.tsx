@@ -21,8 +21,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { SignInDialog } from "@/components/auth/sign-in-dialog";
-import { useDemoSession } from "@/components/providers/demo-session-provider";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,79 +36,60 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { authClient } from "@/lib/auth-client";
+import type { SessionUser } from "@/lib/auth";
 import { bookCategories } from "@/lib/constants/books";
-import { demoUser } from "@/lib/demo/user";
 import { formatDate } from "@/lib/format";
 import { filterOwnedBooks } from "@/lib/owned-books";
 import type { Book } from "@/lib/types/book";
 
 const MAX_BIO_LENGTH = 240;
 
-type FormErrors = Partial<Record<"name" | "email" | "bio", string>>;
+type FormErrors = Partial<Record<"name" | "bio", string>>;
 
-export function ProfileView({ books }: { books: Book[] }) {
-  const { isSignedIn, profile } = useDemoSession();
-
-  if (!isSignedIn) {
-    return (
-      <Card className="mt-7 flex flex-col items-center justify-center rounded-3xl border-0 bg-card px-6 py-16 text-center ring-1 ring-foreground/10">
-        <div className="flex size-14 items-center justify-center rounded-2xl bg-brand-sage/20 text-brand-forest dark:bg-brand-sage/10 dark:text-brand-sage">
-          <UserRound className="size-6" aria-hidden="true" />
-        </div>
-        <h2 className="mt-5 font-display text-2xl font-semibold">
-          Sign in to open your profile
-        </h2>
-        <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-          The demo session only needs a name and email. No password is checked
-          and no route is protected.
-        </p>
-        <SignInDialog className="mt-6 rounded-full" />
-      </Card>
-    );
-  }
-
-  return (
-    <SignedInProfile
-      key={`${profile.name}|${profile.email}`}
-      books={books}
-    />
-  );
+export function ProfileView({
+  books,
+  user,
+}: {
+  books: Book[];
+  user: SessionUser;
+}) {
+  return <SignedInProfile key={user.id} books={books} user={user} />;
 }
 
-function SignedInProfile({ books }: { books: Book[] }) {
+function SignedInProfile({
+  books,
+  user,
+}: {
+  books: Book[];
+  user: SessionUser;
+}) {
   const router = useRouter();
-  const { profile, signOut, updateProfile } = useDemoSession();
-  const [name, setName] = useState(profile.name);
-  const [email, setEmail] = useState(profile.email);
-  const [location, setLocation] = useState(profile.location);
+  const [name, setName] = useState(user.name);
+  const [location, setLocation] = useState(user.location);
   const [favoriteCategory, setFavoriteCategory] = useState(
-    profile.favoriteCategory,
+    user.favoriteCategory,
   );
-  const [bio, setBio] = useState(profile.bio);
+  const [bio, setBio] = useState(user.bio);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSaving, setIsSaving] = useState(false);
 
-  const myBooks = filterOwnedBooks(books, profile);
+  const myBooks = filterOwnedBooks(books, user);
   const categories = new Set(myBooks.map((book) => book.category));
   const copies = myBooks.reduce((total, book) => total + book.totalCopies, 0);
   const isDirty =
-    name !== profile.name ||
-    email !== profile.email ||
-    location !== profile.location ||
-    favoriteCategory !== profile.favoriteCategory ||
-    bio !== profile.bio;
+    name !== user.name ||
+    location !== user.location ||
+    favoriteCategory !== user.favoriteCategory ||
+    bio !== user.bio;
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const nextErrors: FormErrors = {};
 
     if (name.trim().length < 2) {
       nextErrors.name = "Add a name with at least 2 characters.";
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      nextErrors.email = "Enter a valid email address.";
     }
 
     if (bio.length > MAX_BIO_LENGTH) {
@@ -127,23 +106,34 @@ function SignedInProfile({ books }: { books: Book[] }) {
     }
 
     setIsSaving(true);
-
     try {
       const next = {
         name: name.trim(),
-        email: email.trim(),
         location: location.trim(),
         favoriteCategory,
         bio: bio.trim(),
       };
 
-      updateProfile(next);
+      const { error } = await authClient.updateUser(next);
+
+      if (error) {
+        toast.error("Could not update your profile", {
+          description: error.message ?? "Please try again.",
+        });
+        return;
+      }
+
       setName(next.name);
-      setEmail(next.email);
       setLocation(next.location);
       setBio(next.bio);
       toast.success("Profile updated", {
-        description: "Your demo profile is saved in this browser.",
+        description: "Your changes have been saved to your account.",
+      });
+      router.refresh();
+    } catch (error) {
+      toast.error("Could not update your profile", {
+        description:
+          error instanceof Error ? error.message : "Please try again.",
       });
     } finally {
       setIsSaving(false);
@@ -151,23 +141,33 @@ function SignedInProfile({ books }: { books: Book[] }) {
   }
 
   function handleReset() {
-    setName(demoUser.name);
-    setEmail(demoUser.email);
-    setLocation(demoUser.location);
-    setFavoriteCategory(demoUser.favoriteCategory);
-    setBio(demoUser.bio);
+    setName(user.name);
+    setLocation(user.location);
+    setFavoriteCategory(user.favoriteCategory);
+    setBio(user.bio);
     setErrors({});
-    toast.info("Demo profile restored", {
-      description: "Press Save changes to keep the restored details.",
-    });
   }
 
-  function handleSignOut() {
-    signOut();
-    toast.success("Signed out", {
-      description: "You can sign back in anytime with the demo account.",
-    });
-    router.push("/");
+  async function handleSignOut() {
+    try {
+      const { error } = await authClient.signOut();
+
+      if (error) {
+        toast.error("Could not sign out", {
+          description: error.message ?? "Please try again.",
+        });
+        return;
+      }
+
+      toast.success("Signed out");
+      router.push("/");
+      router.refresh();
+    } catch (error) {
+      toast.error("Could not sign out", {
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+      });
+    }
   }
 
   return (
@@ -177,17 +177,17 @@ function SignedInProfile({ books }: { books: Book[] }) {
           <div className="flex flex-col items-center px-5 pt-6 text-center">
             <Avatar className="size-20">
               <AvatarFallback className="bg-[#d9c6b5] text-xl font-semibold text-[#4b3a2c] dark:bg-[#3a2d25] dark:text-[#e8d6c4]">
-                {profile.initials}
+                {user.initials}
               </AvatarFallback>
             </Avatar>
             <h2 className="mt-4 font-display text-2xl font-semibold tracking-[-0.02em]">
-              {profile.name}
+              {user.name}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              {profile.email}
+              {user.email}
             </p>
             <Badge className="mt-3 border-0 bg-brand-sage/20 text-brand-forest dark:bg-brand-sage/10 dark:text-brand-sage">
-              {profile.role}
+              BookNook reader
             </Badge>
           </div>
 
@@ -198,7 +198,7 @@ function SignedInProfile({ books }: { books: Book[] }) {
                 aria-hidden="true"
               />
               <span className="truncate">
-                {profile.location || "No location"}
+                {user.location || "No location"}
               </span>
             </div>
             <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
@@ -206,19 +206,19 @@ function SignedInProfile({ books }: { books: Book[] }) {
                 className="size-4 shrink-0 text-brand-terracotta dark:text-[#e0a48a]"
                 aria-hidden="true"
               />
-              <span>Favourite shelf: {profile.favoriteCategory}</span>
+              <span>Favourite shelf: {user.favoriteCategory}</span>
             </div>
             <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
               <CalendarDays
                 className="size-4 shrink-0 text-brand-terracotta dark:text-[#e0a48a]"
                 aria-hidden="true"
               />
-              <span>Joined {formatDate(profile.joinedAt)}</span>
+              <span>Joined {formatDate(user.joinedAt)}</span>
             </div>
           </div>
 
           <p className="border-t border-border/60 px-5 py-4 text-xs leading-relaxed text-muted-foreground">
-            {profile.bio || "No bio yet. Add a few lines about your reading."}
+            {user.bio || "No bio yet. Add a few lines about your reading."}
           </p>
         </Card>
 
@@ -309,21 +309,13 @@ function SignedInProfile({ books }: { books: Book[] }) {
                   <Label htmlFor="profile-email">Email</Label>
                   <Input
                     id="profile-email"
-                    type="email"
-                    value={email}
-                    onChange={(event) => {
-                      setEmail(event.target.value);
-                      setErrors((current) => ({
-                        ...current,
-                        email: undefined,
-                      }));
-                    }}
+                    value={user.email}
                     className="h-10"
-                    aria-invalid={Boolean(errors.email)}
+                    disabled
                   />
-                  {errors.email && (
-                    <p className="text-xs text-destructive">{errors.email}</p>
-                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Your account email is used to sign in.
+                  </p>
                 </div>
 
                 <div className="grid gap-2">
@@ -395,7 +387,7 @@ function SignedInProfile({ books }: { books: Book[] }) {
                   onClick={handleReset}
                 >
                   <RotateCcw className="size-4" />
-                  Reset to demo
+                  Reset changes
                 </Button>
 
                 <Button
@@ -421,11 +413,11 @@ function SignedInProfile({ books }: { books: Book[] }) {
             <div className="grid gap-5">
               <div>
                 <h2 className="font-display text-xl font-semibold">
-                  Demo account
+                  Account
                 </h2>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  This session is a local UI state. BetterAuth can replace it
-                  later without changing this screen.
+                  Your profile and sign-in details are linked to your BookNook
+                  account.
                 </p>
               </div>
 
@@ -437,7 +429,7 @@ function SignedInProfile({ books }: { books: Book[] }) {
                   <div>
                     <p className="text-sm font-semibold">Signed in</p>
                     <p className="text-xs text-muted-foreground">
-                      {profile.name} · {profile.email}
+                      {user.name} · {user.email}
                     </p>
                   </div>
                 </div>
@@ -447,9 +439,9 @@ function SignedInProfile({ books }: { books: Book[] }) {
                     <Mail className="size-4" aria-hidden="true" />
                   </span>
                   <div>
-                    <p className="text-sm font-semibold">No email checks</p>
+                    <p className="text-sm font-semibold">Account email</p>
                     <p className="text-xs text-muted-foreground">
-                      Any email is accepted in this demo.
+                      Used for sign-in and borrowing books.
                     </p>
                   </div>
                 </div>
@@ -495,8 +487,8 @@ function SignedInProfile({ books }: { books: Book[] }) {
                   className="mt-0.5 size-3.5 shrink-0 text-brand-terracotta dark:text-[#e0a48a]"
                   aria-hidden="true"
                 />
-                Signing out only hides the private shelves in this browser. The
-                add, update, and delete APIs stay open until real auth lands.
+                Signing out ends your authenticated session. You can sign back
+                in anytime.
               </p>
             </div>
           </TabsContent>

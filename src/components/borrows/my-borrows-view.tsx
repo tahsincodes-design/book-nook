@@ -7,15 +7,12 @@ import {
   CalendarClock,
   CalendarDays,
   Clock3,
-  Library,
   Sparkles,
   TriangleAlert,
 } from "lucide-react";
 import { cn } from "cn";
 
-import { SignInDialog } from "@/components/auth/sign-in-dialog";
 import { ReturnBorrowButton } from "@/components/borrows/return-borrow-button";
-import { useDemoSession } from "@/components/providers/demo-session-provider";
 import { BookCover } from "@/components/home/book-cover";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -219,26 +216,6 @@ export function MyBorrowsView({
   books: Book[];
   now: number;
 }) {
-  const { isSignedIn } = useDemoSession();
-
-  if (!isSignedIn) {
-    return (
-      <Card className="mt-7 flex flex-col items-center justify-center rounded-3xl border-0 bg-card px-6 py-14 text-center ring-1 ring-foreground/10">
-        <div className="flex size-14 items-center justify-center rounded-2xl bg-brand-sage/20 text-brand-forest dark:bg-brand-sage/10 dark:text-brand-sage">
-          <Library className="size-6" aria-hidden="true" />
-        </div>
-        <h2 className="mt-5 font-display text-2xl font-semibold">
-          Sign in to see your borrowed books
-        </h2>
-        <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-          This is the demo session, so any name and email will open the shelf.
-          No password is checked.
-        </p>
-        <SignInDialog className="mt-6 rounded-full" />
-      </Card>
-    );
-  }
-
   const items: BorrowCardItem[] = borrows.map((borrow) => {
     const book =
       books.find((candidate) => candidate._id === borrow.bookId) ?? null;

@@ -3,18 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Library, LogOut, Menu, UserRound } from "lucide-react";
+import { Library, LogIn, LogOut, Menu, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "cn";
 
-import { SignInDialog } from "@/components/auth/sign-in-dialog";
 import { BookNookLogo } from "@/components/brand/booknook-logo";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
-import {
-  useDemoSession,
-  type DemoProfile,
-} from "@/components/providers/demo-session-provider";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -32,24 +27,63 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { primaryNav, type NavItem } from "@/lib/constants/navigation";
+import { authClient } from "@/lib/auth-client";
+import type { SessionUser } from "@/lib/auth";
+import {
+  primaryNav,
+  type NavCounts,
+  type NavItem,
+} from "@/lib/constants/navigation";
 
 function isActivePath(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
 
-export function SiteNavbar() {
+export function SiteNavbar({
+  user,
+  counts,
+}: {
+  user: SessionUser | null;
+  counts: NavCounts;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
-  const { isSignedIn, user, signOut } = useDemoSession();
-  const navItems = primaryNav.filter((item) => isSignedIn || !item.private);
 
-  function handleSignOut() {
-    signOut();
+  const navItems = primaryNav
+    .filter((item) => user || !item.private)
+    .map((item) => ({
+      ...item,
+      count:
+        item.href === "/my-books"
+          ? counts.myBooks
+          : item.href === "/my-borrows"
+            ? counts.myBorrows
+            : item.count,
+    }));
+
+  const isAuthPage =
+    pathname.startsWith("/login") || pathname.startsWith("/register");
+  const redirectTarget = isAuthPage ? "/" : pathname;
+  const loginHref =
+    redirectTarget === "/"
+      ? "/login"
+      : `/login?redirect=${encodeURIComponent(redirectTarget)}`;
+
+  async function handleSignOut() {
     setMenuOpen(false);
+
+    const { error } = await authClient.signOut();
+
+    if (error) {
+      toast.error("Could not sign out", {
+        description: error.message ?? "Please try again.",
+      });
+      return;
+    }
+
     toast.success("Signed out", {
-      description: "You can sign back in anytime with the demo account.",
+      description: "You can sign back in anytime.",
     });
     router.push("/");
     router.refresh();
@@ -82,10 +116,17 @@ export function SiteNavbar() {
         <div className="ml-auto flex items-center gap-1.5">
           <ThemeToggle />
 
-          {isSignedIn && user ? (
+          {user ? (
             <UserMenu user={user} onSignOut={handleSignOut} />
           ) : (
-            <SignInDialog className="hidden rounded-full sm:inline-flex" />
+            <Button
+              render={<Link href={loginHref} />}
+              nativeButton={false}
+              className="hidden rounded-full sm:inline-flex"
+            >
+              <LogIn className="size-4" aria-hidden="true" />
+              Login
+            </Button>
           )}
 
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
@@ -149,18 +190,14 @@ export function SiteNavbar() {
               </nav>
 
               <SheetFooter className="mt-auto gap-3 border-t border-border/60 p-4">
-                {isSignedIn && user ? (
+                {user ? (
                   <>
                     <Link
                       href="/profile"
                       onClick={() => setMenuOpen(false)}
                       className="flex items-center gap-3 rounded-xl p-1 transition-colors hover:bg-muted"
                     >
-                      <Avatar>
-                        <AvatarFallback className="bg-[#d9c6b5] text-[0.65rem] font-semibold text-[#4b3a2c] dark:bg-[#3a2d25] dark:text-[#e8d6c4]">
-                          {user.initials}
-                        </AvatarFallback>
-                      </Avatar>
+                      <UserAvatar user={user} />
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-foreground">
                           {user.name}
@@ -198,12 +235,24 @@ export function SiteNavbar() {
                     </div>
                   </>
                 ) : (
-                  <div className="grid gap-2">
+                  <div className="grid gap-3">
                     <p className="text-xs leading-relaxed text-muted-foreground">
-                      Sign in with the demo reader to unlock the private shelves.
-                      No password or authorization is required.
+                      Sign in to borrow books, add your own, and keep track of
+                      every due date.
                     </p>
-                    <SignInDialog className="w-full rounded-full" />
+                    <Button
+                      render={
+                        <Link
+                          href={loginHref}
+                          onClick={() => setMenuOpen(false)}
+                        />
+                      }
+                      nativeButton={false}
+                      className="w-full rounded-full"
+                    >
+                      <LogIn className="size-4" />
+                      Login
+                    </Button>
                   </div>
                 )}
               </SheetFooter>
@@ -212,6 +261,23 @@ export function SiteNavbar() {
         </div>
       </div>
     </header>
+  );
+}
+
+function UserAvatar({
+  user,
+  className,
+}: {
+  user: SessionUser;
+  className?: string;
+}) {
+  return (
+    <Avatar className={className}>
+      {user.image ? <AvatarImage src={user.image} alt={user.name} /> : null}
+      <AvatarFallback className="bg-[#d9c6b5] text-[0.65rem] font-semibold text-[#4b3a2c] dark:bg-[#3a2d25] dark:text-[#e8d6c4]">
+        {user.initials}
+      </AvatarFallback>
+    </Avatar>
   );
 }
 
@@ -248,7 +314,7 @@ function UserMenu({
   user,
   onSignOut,
 }: {
-  user: DemoProfile;
+  user: SessionUser;
   onSignOut: () => void;
 }) {
   return (
@@ -257,11 +323,7 @@ function UserMenu({
         aria-label="Open account menu"
         className="ml-0.5 rounded-full ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
       >
-        <Avatar>
-          <AvatarFallback className="bg-[#d9c6b5] text-[0.65rem] font-semibold text-[#4b3a2c] dark:bg-[#3a2d25] dark:text-[#e8d6c4]">
-            {user.initials}
-          </AvatarFallback>
-        </Avatar>
+        <UserAvatar user={user} />
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-60">

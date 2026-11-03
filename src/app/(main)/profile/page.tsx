@@ -6,13 +6,15 @@ import { PageHeader } from "@/components/layout/page-header";
 import { ProfileView } from "@/components/profile/profile-view";
 import { Button } from "@/components/ui/button";
 import { getBooks } from "@/lib/api/books";
+import { requireUser } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "My profile",
-  description: "Update your BookNook reader profile and demo session.",
+  description: "Update your BookNook reader profile and account details.",
 };
 
 export default async function ProfilePage() {
+  const user = await requireUser("/profile");
   const books = await getBooks();
 
   return (
@@ -20,7 +22,7 @@ export default async function ProfilePage() {
       <PageHeader
         eyebrow="Your corner"
         title="My profile"
-        description="The reader behind the shelf. Update your details, check your reading stats, and manage the demo session."
+        description="The reader behind the shelf. Update your details and check your reading stats."
         action={
           <Button
             render={<Link href="/add-book" />}
@@ -34,7 +36,7 @@ export default async function ProfilePage() {
         }
       />
 
-      <ProfileView books={books} />
+      <ProfileView books={books} user={user} />
     </div>
   );
 }

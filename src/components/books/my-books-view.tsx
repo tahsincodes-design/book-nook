@@ -3,38 +3,13 @@
 import Link from "next/link";
 import { Library, Plus, Sparkles } from "lucide-react";
 
-import { SignInDialog } from "@/components/auth/sign-in-dialog";
 import { MyBookCard } from "@/components/books/my-book-card";
-import { useDemoSession } from "@/components/providers/demo-session-provider";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { demoUser } from "@/lib/demo/user";
-import { filterOwnedBooks } from "@/lib/owned-books";
 import type { Book } from "@/lib/types/book";
 
 export function MyBooksView({ books }: { books: Book[] }) {
-  const { user, isSignedIn } = useDemoSession();
-
-  if (!isSignedIn) {
-    return (
-      <Card className="mt-7 flex flex-col items-center justify-center rounded-3xl border-0 bg-card px-6 py-14 text-center ring-1 ring-foreground/10">
-        <div className="flex size-14 items-center justify-center rounded-2xl bg-brand-sage/20 text-brand-forest dark:bg-brand-sage/10 dark:text-brand-sage">
-          <Library className="size-6" aria-hidden="true" />
-        </div>
-        <h2 className="mt-5 font-display text-2xl font-semibold">
-          Sign in to see your collection
-        </h2>
-        <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-          This is the demo session, so any name and email will open the shelf.
-          No password is checked.
-        </p>
-        <SignInDialog className="mt-6 rounded-full" />
-      </Card>
-    );
-  }
-
-  const reader = user ?? demoUser;
-  const myBooks = filterOwnedBooks(books, reader);
+  const myBooks = books;
   const categories = new Set(myBooks.map((book) => book.category));
   const copies = myBooks.reduce((total, book) => total + book.totalCopies, 0);
 

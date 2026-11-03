@@ -1,14 +1,15 @@
 "use client";
 
-import { useDemoSession } from "@/components/providers/demo-session-provider";
+import { authClient } from "@/lib/auth-client"; // Make sure this points to your actual BetterAuth client file
 
 export function WelcomeMessage() {
-  const { isSignedIn, profile } = useDemoSession();
+  const { data: session } = authClient.useSession();
+  const userName = session?.user?.name;
 
   return (
     <p className="hidden text-xs text-muted-foreground sm:block">
-      {isSignedIn
-        ? `Welcome back, ${profile.name.split(/\s+/)[0]}.`
+      {userName
+        ? `Welcome back, ${userName.split(/\s+/)[0]}.`
         : "Welcome to BookNook."}
     </p>
   );
