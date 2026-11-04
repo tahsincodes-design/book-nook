@@ -210,15 +210,47 @@ export function MyBooksLoading() {
     <LoadingFrame label="Loading your collection">
       <div className="mx-auto w-full max-w-7xl px-4 pt-8 pb-10 sm:px-6 lg:px-8">
         <PageHeadingSkeleton action />
-        <div className="mt-7 grid gap-4 sm:grid-cols-3">
-          {[0, 1, 2].map((item) => (
-            <Skeleton key={item} className="h-32 rounded-2xl" />
-          ))}
-        </div>
-        <div className="mt-7 grid gap-5 lg:grid-cols-2">
-          {[0, 1].map((item) => (
-            <Skeleton key={item} className="h-64 rounded-3xl" />
-          ))}
+        <div className="mt-7 grid items-start gap-6 lg:grid-cols-[250px_minmax(0,1fr)] xl:gap-8">
+          <div className="space-y-5 rounded-3xl bg-brand-forest p-5 sm:p-6">
+            <Skeleton className="h-3 w-24 bg-white/15" />
+            <Skeleton className="h-7 w-36 bg-white/15" />
+            <Skeleton className="h-4 w-full bg-white/15" />
+            <div className="space-y-2 pt-2">
+              <Skeleton className="h-3 w-28 bg-white/15" />
+              <Skeleton className="h-11 w-full rounded-xl bg-white/15" />
+            </div>
+            <div className="space-y-2 pt-2">
+              <Skeleton className="h-3 w-24 bg-white/15" />
+              {[0, 1, 2].map((item) => (
+                <Skeleton
+                  key={item}
+                  className="h-10 w-full rounded-xl bg-white/15"
+                />
+              ))}
+            </div>
+            <div className="space-y-2 pt-2">
+              <Skeleton className="h-3 w-20 bg-white/15" />
+              {[0, 1, 2].map((item) => (
+                <Skeleton
+                  key={item}
+                  className="h-9 w-full rounded-xl bg-white/15"
+                />
+              ))}
+            </div>
+            <Skeleton className="h-9 w-28 rounded-full bg-white/15" />
+          </div>
+          <div className="space-y-5">
+            <div className="grid gap-4 sm:grid-cols-3">
+              {[0, 1, 2].map((item) => (
+                <Skeleton key={item} className="h-32 rounded-2xl" />
+              ))}
+            </div>
+            <div className="grid gap-5 lg:grid-cols-2">
+              {[0, 1].map((item) => (
+                <Skeleton key={item} className="h-64 rounded-3xl" />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </LoadingFrame>
