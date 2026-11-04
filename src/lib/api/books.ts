@@ -122,10 +122,14 @@ export async function getBooks(): Promise<Book[]> {
  * available on the API yet.
  */
 export async function getBook(id: string): Promise<Book | null> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("books");
+
   try {
     const response = await fetch(`${API_URL}/books/${encodeURIComponent(id)}`, {
       headers: { Accept: "application/json" },
-      cache: "no-store",
+      next: { tags: ["books"] },
     });
 
     if (response.ok) {

@@ -5,11 +5,6 @@ import { SiteNavbar } from "@/components/layout/site-navbar";
 import { getCurrentUser } from "@/lib/auth";
 import { getNavCounts } from "@/lib/nav-counts";
 
-// The navbar reads the current pathname for active links. Until the auth and
-// URL-dependent screens are split behind their own Suspense boundaries, let
-// these routes block on the server instead of prerendering an empty shell.
-export const instant = false;
-
 async function NavbarWithSession() {
   const user = await getCurrentUser();
   const counts = await getNavCounts(user);

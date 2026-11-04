@@ -85,7 +85,7 @@ export function SiteNavbar({
     toast.success("Signed out", {
       description: "You can sign back in anytime.",
     });
-    router.push("/");
+    router.replace("/");
     router.refresh();
   }
 

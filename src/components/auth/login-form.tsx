@@ -90,7 +90,9 @@ export function LoginForm({
       toast.success("Welcome back", {
         description: "You are signed in to BookNook.",
       });
-      router.push(redirectTo);
+      // Replace so the back button cannot return to the login form, then
+      // refresh so the shared navbar picks up the new session.
+      router.replace(redirectTo);
       router.refresh();
     } catch (error) {
       const message =

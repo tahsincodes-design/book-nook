@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import { API_URL } from "@/lib/api/config";
 import { getApiAccessToken } from "@/lib/auth";
 
@@ -74,8 +76,13 @@ function normalizeBorrow(value: unknown): Borrow | null {
   };
 }
 
-/** Reads the active loans for one reader from the authenticated API. */
-export async function getMyBorrows(email: string): Promise<Borrow[]> {
+/**
+ * Reads the active loans for one reader from the authenticated API.
+ *
+ * Wrapped in `cache` so the layout's nav badge and a page that also needs the
+ * loans share one API call (and one JWT mint) per request.
+ */
+export const getMyBorrows = cache(async (email: string): Promise<Borrow[]> => {
   const normalizedEmail = email?.trim().toLowerCase() ?? "";
 
   if (!normalizedEmail) {
@@ -118,4 +125,4 @@ export async function getMyBorrows(email: string): Promise<Borrow[]> {
     );
     return [];
   }
-}
+});

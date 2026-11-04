@@ -103,6 +103,16 @@ export const auth = betterAuth({
     // Registration should land on the Login page, not sign the reader in.
     autoSignIn: false,
   },
+  session: {
+    // Keep a short-lived signed copy of the session in the cookie so every
+    // server render does not round-trip to MongoDB just to read the reader.
+    // Five minutes matches BetterAuth's default and keeps profile edits and
+    // sign-out responsive enough for this app.
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60,
+    },
+  },
   socialProviders:
     googleClientId && googleClientSecret
       ? {

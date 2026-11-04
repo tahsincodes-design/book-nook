@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -59,11 +60,14 @@ function toIsoDate(value: Date | string | undefined) {
   return new Date(0).toISOString();
 }
 
-export async function getSession() {
+// `cache` dedupes the session lookup and token mint across the layout, page,
+// and metadata render of a single request. Without it every server component
+// that needs the reader repeats the same work.
+export const getSession = cache(async () => {
   return auth.api.getSession({ headers: await headers() });
-}
+});
 
-export async function getApiAccessToken(): Promise<string> {
+export const getApiAccessToken = cache(async (): Promise<string> => {
   const { token } = await auth.api.getToken({ headers: await headers() });
 
   if (!token) {
@@ -71,9 +75,9 @@ export async function getApiAccessToken(): Promise<string> {
   }
 
   return token;
-}
+});
 
-export async function getCurrentUser(): Promise<SessionUser | null> {
+export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   const session = await getSession();
   const user = session?.user as BetterAuthUser | undefined;
 
@@ -92,7 +96,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     bio: user.bio ?? "",
     joinedAt: toIsoDate(user.createdAt),
   };
-}
+});
 
 /**
  * Server-side guard for private routes. Sends the reader to Login and asks

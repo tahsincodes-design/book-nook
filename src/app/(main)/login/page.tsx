@@ -5,8 +5,6 @@ import { LoginForm } from "@/components/auth/login-form";
 import { getCurrentUser, googleAuthConfigured } from "@/lib/auth";
 import { safeRedirectPath } from "@/lib/redirect";
 
-export const instant = false;
-
 export const metadata: Metadata = {
   title: "Login",
   description: "Sign in to your BookNook reader account.",

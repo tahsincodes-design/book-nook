@@ -10,8 +10,6 @@ import { getMyBorrows } from "@/lib/api/borrows";
 import { getNow } from "@/lib/api/clock";
 import { requireUser } from "@/lib/auth";
 
-export const instant = false;
-
 export const metadata: Metadata = {
   title: "Borrowed books",
   description: "The books you are reading right now, with due dates.",

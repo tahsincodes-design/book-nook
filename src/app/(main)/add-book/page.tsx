@@ -7,8 +7,6 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth";
 
-export const instant = false;
-
 export const metadata: Metadata = {
   title: "Add a book",
   description: "Put a favourite book on the BookNook shelf for another reader.",

@@ -12,8 +12,6 @@ export const metadata: Metadata = {
   description: "Browse the full BookNook catalogue.",
 };
 
-export const instant = false;
-
 type BooksPageProps = {
   searchParams: Promise<{ q?: string; category?: string }>;
 };

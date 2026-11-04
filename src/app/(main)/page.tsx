@@ -63,7 +63,13 @@ export default function HomePage() {
         >
           <TodayLabel />
         </Suspense>
-        <WelcomeMessage />
+        <Suspense
+          fallback={
+            <span className="hidden h-4 w-40 animate-pulse rounded bg-muted sm:block" />
+          }
+        >
+          <WelcomeMessage />
+        </Suspense>
       </div>
 
       <Suspense fallback={<FeaturedBooksLoading />}>

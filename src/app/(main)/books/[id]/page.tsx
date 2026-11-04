@@ -40,13 +40,12 @@ type BookDetailsPageProps = {
 
 // The detail screen reads route params, so let this route block on the server
 // until the catalogue is split behind its own Suspense boundary.
-export const instant = false;
-
 export async function generateMetadata({
   params,
 }: BookDetailsPageProps): Promise<Metadata> {
   const { id } = await params;
-  await requireUser(`/books/${id}`);
+  // Metadata does not need the session. The page itself still calls
+  // requireUser, and skipping the extra auth read keeps the head fast.
   const book = await getBook(id);
 
   return {

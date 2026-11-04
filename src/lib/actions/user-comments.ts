@@ -1,5 +1,7 @@
 "use server";
 
+import { updateTag } from "next/cache";
+
 import { getUserComments, postUserComment } from "@/lib/api/user-comments";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -36,6 +38,9 @@ export async function addUserComment(
 
   try {
     await postUserComment(comment, rating);
+    // Readers' Corner is cached for a minute; drop the entry so the new
+    // comment appears on the next visit instead of after the cache expires.
+    updateTag("comments");
     return { ok: true };
   } catch (error) {
     return {

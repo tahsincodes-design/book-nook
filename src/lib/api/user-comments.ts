@@ -1,3 +1,5 @@
+import { cacheLife, cacheTag } from "next/cache";
+
 import { API_URL } from "@/lib/api/config";
 import { getApiAccessToken } from "@/lib/auth";
 
@@ -162,11 +164,15 @@ export async function getUserComments(): Promise<UserComment[]> {
 }
 
 export async function getPublicUserComments(): Promise<UserComment[]> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("comments");
+
   const response = await fetch(`${API_URL}/usersComments`, {
     headers: {
       Accept: "application/json",
     },
-    cache: "no-store",
+    next: { tags: ["comments"] },
   });
 
   if (!response.ok) {
